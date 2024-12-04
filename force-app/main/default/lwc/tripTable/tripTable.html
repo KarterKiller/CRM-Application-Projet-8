@@ -1,0 +1,14 @@
+<template>
+    <lightning-card title="Liste des Voyages (Trips)" icon-name="custom:custom63">
+        <template if:true={trips}>
+            <lightning-datatable
+                key-field="id"
+                data={trips}
+                columns={columns}>
+            </lightning-datatable>
+        </template>
+        <template if:true={error}>
+            <p class="slds-text-color_error">Une erreur s'est produite : {error}</p>
+        </template>
+    </lightning-card>
+</template>
