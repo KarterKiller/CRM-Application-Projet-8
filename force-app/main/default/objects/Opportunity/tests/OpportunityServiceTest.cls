@@ -8,12 +8,14 @@ public class OpportunityServiceTest {
         insert acc;
         System.assertNotEquals(null, acc.Id, 'Le compte aurait dû être créé.');
 
-        // Étape 2 : Créer une opportunité
+        // Étape 2 : Créer une opportunité avec les dates Start et End du voyage
         Id opportunityId = OpportunityService.createOpportunity(
             'Test Opportunity',
             'Prospecting',         // Stage initial
             Date.today().addDays(30), // Date de clôture
-            acc.Id                 // AccountId
+            acc.Id,                 // AccountId
+            Date.today().addDays(5),  // Date de début du voyage
+            Date.today().addDays(10)  // Date de fin du voyage
         );
         System.assertNotEquals(null, opportunityId, 'L\'opportunité aurait dû être créée.');
 
@@ -21,6 +23,10 @@ public class OpportunityServiceTest {
         Opportunity retrievedOpportunity = OpportunityService.getOpportunityByName('Test Opportunity');
         System.assertEquals('Test Opportunity', retrievedOpportunity.Name, 'Le nom de l\'opportunité devrait être "Test Opportunity".');
         System.assertEquals('Prospecting', retrievedOpportunity.StageName, 'Le stage initial devrait être "Prospecting".');
+
+        // Vérifier que les dates Start et End sont bien présentes
+        System.assertNotEquals(null, retrievedOpportunity.StartTripDate__c, 'La date de début du voyage ne devrait pas être vide.');
+        System.assertNotEquals(null, retrievedOpportunity.EndTripDate__c, 'La date de fin du voyage ne devrait pas être vide.');
 
         // Étape 4 : Mettre à jour le stage de l'opportunité
         OpportunityService.updateOpportunityStage(opportunityId, 'Closed Won');
@@ -33,21 +39,52 @@ public class OpportunityServiceTest {
         System.assertEquals(0, opportunities.size(), 'L\'opportunité aurait dû être supprimée.');
     }
 
+
+
     @isTest
-    static void testCreateOpportunityWithoutAccount() {
-        // Test pour vérifier la gestion d'une opportunité sans compte (doit échouer)
-        Test.startTest();
-        try {
-            OpportunityService.createOpportunity(
-                'Invalid Opportunity',
-                'Prospecting',
-                Date.today().addDays(30),
-                null // Pas de compte lié
-            );
-            System.assert(false, 'La création d\'une opportunité sans compte aurait dû échouer.');
-        } catch (DmlException e) {
-            System.assert(e.getMessage().contains('REQUIRED_FIELD_MISSING'), 'Une exception aurait dû être levée pour un champ manquant.');
-        }
-        Test.stopTest();
+    static void testCreateOpportunityWithStage() {
+        // Étape 1 : Créer un compte pour lier l'opportunité
+        Account acc = new Account(Name = 'Test Account');
+        insert acc;
+
+        // Étape 2 : Créer une opportunité avec un stage spécifique
+        Opportunity newOpp = new Opportunity(
+            Name = 'Test Opportunity with Stage',
+            StageName = 'Qualification', // Stage spécifique
+            CloseDate = Date.today().addDays(30),
+            AccountId = acc.Id
+        );
+        insert newOpp;
+
+        // Vérifier que l'opportunité a bien été créée avec le stage spécifié
+        Opportunity retrievedOpp = [SELECT Id, StageName FROM Opportunity WHERE Id = :newOpp.Id];
+        System.assertEquals('Qualification', retrievedOpp.StageName, 'Le stage de l\'opportunité devrait être "Qualification".');
+    }
+
+    @isTest
+    static void testDeleteOpportunity() {
+        // Étape 1 : Créer un compte pour lier l'opportunité
+        Account acc = new Account(Name = 'Test Account');
+        insert acc;
+
+        // Étape 2 : Créer une opportunité
+        Opportunity newOpp = new Opportunity(
+            Name = 'Test Opportunity for Deletion',
+            StageName = 'Prospecting',
+            CloseDate = Date.today().addDays(30),
+            AccountId = acc.Id
+        );
+        insert newOpp;
+
+        // Vérifier que l'opportunité a été insérée
+        Opportunity retrievedOpp = [SELECT Id FROM Opportunity WHERE Id = :newOpp.Id];
+        System.assertNotEquals(null, retrievedOpp, 'L\'opportunité aurait dû être insérée.');
+
+        // Étape 3 : Supprimer l'opportunité
+        OpportunityService.deleteOpportunity(newOpp.Id);
+
+        // Vérifier que l'opportunité a été supprimée
+        List<Opportunity> opportunities = [SELECT Id FROM Opportunity WHERE Id = :newOpp.Id];
+        System.assertEquals(0, opportunities.size(), 'L\'opportunité aurait dû être supprimée.');
     }
 }

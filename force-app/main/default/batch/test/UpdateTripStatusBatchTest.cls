@@ -5,10 +5,10 @@ public class UpdateTripStatusBatchTest {
     static void testBatchExecution() {
         // Créer des voyages de test
         List<Trip__c> trips = new List<Trip__c>{
-            new Trip__c(Name = 'Voyage A venir', Start_Date__c = Date.today().addDays(5), End_Date__c = Date.today().addDays(10), Status__c = 'A venir'),
-            new Trip__c(Name = 'Voyage En cours', Start_Date__c = Date.today().addDays(-2), End_Date__c = Date.today().addDays(3), Status__c = 'A venir'),
-            new Trip__c(Name = 'Voyage Terminé', Start_Date__c = Date.today().addDays(-10), End_Date__c = Date.today().addDays(-5), Status__c = 'A venir'),
-            new Trip__c(Name = 'Voyage Annulé', Start_Date__c = Date.today().addDays(5), End_Date__c = Date.today().addDays(10), Status__c = 'Annulé')
+            new Trip__c(Name = 'Voyage A venir', StartTripDate__c = Date.today().addDays(5), EndTripDate__c = Date.today().addDays(10), Status__c = 'A venir'),
+            new Trip__c(Name = 'Voyage En cours', StartTripDate__c = Date.today().addDays(-2), EndTripDate__c = Date.today().addDays(3), Status__c = 'A venir'),
+            new Trip__c(Name = 'Voyage Terminé', StartTripDate__c = Date.today().addDays(-10), EndTripDate__c = Date.today().addDays(-5), Status__c = 'A venir'),
+            new Trip__c(Name = 'Voyage Annulé', StartTripDate__c = Date.today().addDays(5), EndTripDate__c = Date.today().addDays(10), Status__c = 'Annulé')
         };
         insert trips;
 

@@ -1,13 +1,15 @@
 global class CancelTripsBatch implements Database.Batchable<SObject>, Schedulable {
 
-    // Méthode start : Sélectionne les voyages à vérifier
+    // Méthode start : Sélectionne les voyages à vérifier. Déclencheur Batch : Database.executeBatch(new CancelTripsBatch());
     global Database.QueryLocator start(Database.BatchableContext BC) {
         System.debug('CancelTripsBatch - Début de la méthode start');
-        // Sélectionner les voyages à 7 jours de la date actuelle
+
+        // Sélectionner les voyages dont la date de début est dans les 7 jours à venir
         return Database.getQueryLocator([
-            SELECT Id, Name, Start_Date__c, Number_of_Participants__c, Status__c
+            SELECT Id, Name, StartTripDate__c, Number_of_Participants__c, Status__c
             FROM Trip__c
-            WHERE Start_Date__c = :Date.today().addDays(7)
+            WHERE StartTripDate__c >= :Date.today() 
+            AND StartTripDate__c <= :Date.today().addDays(7)
             AND Status__c != 'Annulé'
         ]);
     }
@@ -23,9 +25,10 @@ global class CancelTripsBatch implements Database.Batchable<SObject>, Schedulabl
             System.debug('Traitement du voyage : ' + trip.Name);
             System.debug('Nombre de participants : ' + trip.Number_of_Participants__c);
 
+            // Annuler le voyage si le nombre de participants est inférieur à 10
             if (trip.Number_of_Participants__c != null && trip.Number_of_Participants__c < 10) {
-                trip.Status__c = 'Annulé'; // Mettre à jour le statut
-                tripsToCancel.add(trip);
+                trip.Status__c = 'Annulé'; // Mettre à jour le statut du voyage
+                tripsToCancel.add(trip);    // Ajouter à la liste des voyages à annuler
                 System.debug('Voyage ajouté à la liste des annulations : ' + trip.Name);
             } else {
                 System.debug('Voyage non annulé : ' + trip.Name);
@@ -53,6 +56,7 @@ global class CancelTripsBatch implements Database.Batchable<SObject>, Schedulabl
     // Méthode pour planifier le batch
     global void execute(SchedulableContext SC) {
         System.debug('CancelTripsBatch - Planification du batch');
-        Database.executeBatch(new CancelTripsBatch());
+        // Planifie le batch à exécuter une fois par jour
+        Database.executeBatch(new CancelTripsBatch(), 200);
     }
 }

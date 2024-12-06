@@ -1,28 +1,42 @@
 public class ContractService {
 
-    // **Créer un contrat**
-    public static Id createContract(Id accountId, Integer contractTerm, Date startDate, String status) {
+    // Créer un contrat à partir d'une opportunité
+    public static Id createContractFromOpportunity(Id opportunityId) {
+        // Récupérer l'opportunité
+        Opportunity opp = [SELECT Id, AccountId, Name, Amount, Destination__c, Number_of_Participants__c, StartTripDate__c, EndTripDate__c
+                           FROM Opportunity 
+                           WHERE Id = :opportunityId 
+                           LIMIT 1];
+        
+        // Créer le contrat en utilisant les informations de l'opportunité
         Contract newContract = new Contract(
-            AccountId = accountId,
-            ContractTerm = contractTerm,
-            StartDate = startDate,
-            Status = status
+            AccountId = opp.AccountId, // Associer le contrat au même compte que l'opportunité
+            Opportunity__c = opp.Id, // Lier l'opportunité au contrat
+            Name = 'Contract for ' + opp.Name,
+            StartTripDate__c = opp.StartTripDate__c, // Récupérer la date de début de l'opportunité
+            EndTripDate__c = opp.EndTripDate__c, // Récupérer la date de fin de l'opportunité
+            Amount__c = opp.Amount, // Récupérer le montant de l'opportunité
+            Destination__c = opp.Destination__c, // Récupérer la destination de l'opportunité
+            Number_of_Participants__c = opp.Number_of_Participants__c // Récupérer le nombre de participants
+            
         );
+        
+        // Insérer le contrat
         insert newContract;
-        System.debug('Nouveau contrat créé : ' + newContract.Id);
-        return newContract.Id;
+        
+        return newContract.Id; // Retourner l'ID du contrat créé
     }
 
     // **Lire un contrat par ID**
     public static Contract getContractById(Id contractId) {
-        return [SELECT Id, AccountId, StartDate, ContractTerm, Status 
+        return [SELECT Id, Name, AccountId, StartDate, ContractTerm, Status 
                 FROM Contract 
                 WHERE Id = :contractId];
     }
 
     // **Lire les contrats par statut**
     public static List<Contract> getContractsByStatus(String status) {
-        return [SELECT Id, AccountId, StartDate, ContractTerm, Status 
+        return [SELECT Id,  Name, AccountId, StartDate, ContractTerm, Status 
                 FROM Contract 
                 WHERE Status = :status];
     }

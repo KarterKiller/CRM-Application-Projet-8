@@ -4,7 +4,7 @@ global class UpdateTripStatusBatch implements Database.Batchable<SObject>, Sched
     global Database.QueryLocator start(Database.BatchableContext BC) {
         System.debug('UpdateTripStatusBatch - Début de la méthode start');
         return Database.getQueryLocator([
-            SELECT Id, Name, Start_Date__c, End_Date__c, Status__c
+            SELECT Id, Name, StartTripDate__c, EndTripDate__c, Status__c
             FROM Trip__c
             WHERE Status__c != 'Annulé'
         ]);
@@ -17,18 +17,20 @@ global class UpdateTripStatusBatch implements Database.Batchable<SObject>, Sched
 
         List<Trip__c> tripsToUpdate = new List<Trip__c>();
 
+        Date today = Date.today();
+
         for (Trip__c trip : trips) {
             System.debug('Traitement du voyage : ' + trip.Name);
 
-            if (trip.Start_Date__c != null && trip.End_Date__c != null) {
-                Date today = Date.today();
+            if (trip.StartTripDate__c != null && trip.EndTripDate__c != null) {
 
-                if (today < trip.Start_Date__c) {
-                    trip.Status__c = 'A venir';
-                } else if (today >= trip.Start_Date__c && today <= trip.End_Date__c) {
-                    trip.Status__c = 'En cours';
-                } else if (today > trip.End_Date__c) {
-                    trip.Status__c = 'Terminé';
+                // Logique de mise à jour du statut
+                if (today < trip.StartTripDate__c) {
+                    trip.Status__c = 'A venir';  // Si la date de début est dans le futur
+                } else if (today >= trip.StartTripDate__c && today <= trip.EndTripDate__c) {
+                    trip.Status__c = 'En cours';  // Si la date actuelle est entre la date de début et la date de fin
+                } else if (today > trip.EndTripDate__c) {
+                    trip.Status__c = 'Terminé';  // Si la date actuelle est après la date de fin
                 }
 
                 tripsToUpdate.add(trip);
@@ -38,7 +40,7 @@ global class UpdateTripStatusBatch implements Database.Batchable<SObject>, Sched
 
         if (!tripsToUpdate.isEmpty()) {
             try {
-                update tripsToUpdate;
+                update tripsToUpdate;  // Mettre à jour les voyages
                 System.debug('Voyages mis à jour : ' + tripsToUpdate.size());
             } catch (DmlException e) {
                 System.debug('Erreur lors de la mise à jour des statuts : ' + e.getMessage());

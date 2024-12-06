@@ -5,9 +5,9 @@ public class CancelTripsBatchTest {
     static void testBatchExecution() {
         // Créer des voyages de test
         List<Trip__c> trips = new List<Trip__c>{
-            new Trip__c(Name = 'Voyage 1', Start_Date__c = Date.today().addDays(7), Number_of_Participants__c = 5, Status__c = 'A venir'),
-            new Trip__c(Name = 'Voyage 2', Start_Date__c = Date.today().addDays(7), Number_of_Participants__c = 15, Status__c = 'A venir'),
-            new Trip__c(Name = 'Voyage 3', Start_Date__c = Date.today().addDays(7), Number_of_Participants__c = null, Status__c = 'A venir')
+            new Trip__c(Name = 'Voyage 1', StartTripDate__c = Date.today().addDays(7), EndTripDate__c = Date.today().addDays(9), Number_of_Participants__c = 5, Status__c = 'A venir'),
+            new Trip__c(Name = 'Voyage 2', StartTripDate__c = Date.today().addDays(7), EndTripDate__c = Date.today().addDays(9), Number_of_Participants__c = 15, Status__c = 'A venir'),
+            new Trip__c(Name = 'Voyage 3', StartTripDate__c = Date.today().addDays(7), EndTripDate__c = Date.today().addDays(9),Number_of_Participants__c = null, Status__c = 'A venir')
         };
         insert trips;
 
