@@ -1,0 +1,15 @@
+<template>
+    <lightning-card title="Historique des Tâches" icon-name="standard:task">
+        <template if:true={tasks}>
+            <lightning-datatable
+                key-field="Id"
+                data={tasks}
+                columns={columns}
+                hide-checkbox-column>
+            </lightning-datatable>
+        </template>
+        <template if:true={error}>
+            <p class="slds-text-color_error">Erreur : {error}</p>
+        </template>
+    </lightning-card>
+</template>

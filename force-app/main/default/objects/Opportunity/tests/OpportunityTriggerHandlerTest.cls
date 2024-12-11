@@ -40,4 +40,3 @@ public class OpportunityTriggerHandlerTest {
         System.assertEquals(opp.EndTripDate__c, trips[0].EndTripDate__c);      // Vérification de EndTripDate__c
     }
 }
-

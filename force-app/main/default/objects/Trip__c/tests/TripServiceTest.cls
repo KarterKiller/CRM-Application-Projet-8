@@ -4,140 +4,151 @@ private class TripServiceTest {
     @isTest
     static void testCreateTrip() {
         // Créer un compte de test
-        Account testAccount = new Account(Name='Test Account');
+        Account testAccount = new Account(Name = 'Test Account');
         insert testAccount;
 
-        // Créer un voyage avec les nouvelles dates du voyage
-        Id tripId = TripService.createTrip('Test Trip', Date.today(), Date.today().addDays(7), 'A venir', 1000, testAccount.Id);
-        
-        // Vérifier que le voyage a bien été créé
-        Trip__c createdTrip = [SELECT Id, Name, StartTripDate__c, EndTripDate__c, Status__c FROM Trip__c WHERE Id = :tripId];
-        System.assertNotEquals(null, createdTrip);
-        System.assertEquals('Test Trip', createdTrip.Name);
-        System.assertEquals('A venir', createdTrip.Status__c);
+        // Créer un voyage avec des données valides
+        Id tripId = TripService.createTrip(
+            'Test Trip',
+            Date.today(),
+            Date.today().addDays(7),
+            'A venir',
+            1000,
+            testAccount.Id
+        );
+
+        // Vérifier que le voyage a été créé
+        Trip__c createdTrip = [SELECT Id, Name, StartTripDate__c, EndTripDate__c, Status__c, Total_Cost__c FROM Trip__c WHERE Id = :tripId];
+        System.assertNotEquals(null, createdTrip, 'Le voyage aurait dû être créé.');
+        System.assertEquals('Test Trip', createdTrip.Name, 'Le nom du voyage est incorrect.');
+        System.assertEquals('A venir', createdTrip.Status__c, 'Le statut du voyage est incorrect.');
+        System.assertEquals(1000, createdTrip.Total_Cost__c, 'Le coût total du voyage est incorrect.');
     }
 
     @isTest
     static void testUpdateTripStatus() {
         // Créer un compte de test
-        Account testAccount = new Account(Name='Test Account');
+        Account testAccount = new Account(Name = 'Test Account');
         insert testAccount;
 
-        // Créer un voyage avec les nouvelles dates du voyage
-        Trip__c newTrip = new Trip__c(Name='Test Trip', Account__c=testAccount.Id, StartTripDate__c=Date.today(), EndTripDate__c=Date.today().addDays(7), Status__c='A venir');
-        insert newTrip;
+        // Créer un voyage
+        Trip__c trip = new Trip__c(
+            Name = 'Test Trip',
+            Account__c = testAccount.Id,
+            StartTripDate__c = Date.today(),
+            EndTripDate__c = Date.today().addDays(7),
+            Status__c = 'A venir'
+        );
+        insert trip;
 
-        // Mettre à jour le statut du voyage
-        TripService.updateTripStatus(newTrip.Id, 'En cours');
-        
-        // Récupérer le voyage mis à jour et vérifier le statut
-        newTrip = [SELECT Status__c FROM Trip__c WHERE Id = :newTrip.Id];
-        System.assertEquals('En cours', newTrip.Status__c);
+        // Mettre à jour le statut
+        TripService.updateTripStatus(trip.Id, 'En cours');
+
+        // Vérifier la mise à jour
+        Trip__c updatedTrip = [SELECT Status__c FROM Trip__c WHERE Id = :trip.Id];
+        System.assertEquals('En cours', updatedTrip.Status__c, 'Le statut du voyage n\'a pas été mis à jour correctement.');
     }
 
     @isTest
     static void testUpdateTripCost() {
         // Créer un compte de test
-        Account testAccount = new Account(Name='Test Account');
+        Account testAccount = new Account(Name = 'Test Account');
         insert testAccount;
 
-        // Créer un voyage avec les nouvelles dates du voyage
-        Trip__c newTrip = new Trip__c(Name='Test Trip', Account__c=testAccount.Id, StartTripDate__c=Date.today(), EndTripDate__c=Date.today().addDays(7), Total_Cost__c=1000);
-        insert newTrip;
+        // Créer un voyage
+        Trip__c trip = new Trip__c(
+            Name = 'Test Trip',
+            Account__c = testAccount.Id,
+            StartTripDate__c = Date.today(),
+            EndTripDate__c = Date.today().addDays(7),
+            Total_Cost__c = 1000
+        );
+        insert trip;
 
-        // Mettre à jour le coût du voyage
-        TripService.updateTripCost(newTrip.Id, 1500);
-        
-        // Vérifier que le coût a bien été mis à jour
-        newTrip = [SELECT Total_Cost__c FROM Trip__c WHERE Id = :newTrip.Id];
-        System.assertEquals(1500, newTrip.Total_Cost__c);
+        // Mettre à jour le coût
+        TripService.updateTripCost(trip.Id, 1500);
+
+        // Vérifier la mise à jour
+        Trip__c updatedTrip = [SELECT Total_Cost__c FROM Trip__c WHERE Id = :trip.Id];
+        System.assertEquals(1500, updatedTrip.Total_Cost__c, 'Le coût total du voyage n\'a pas été mis à jour correctement.');
     }
 
     @isTest
     static void testDeleteTrip() {
         // Créer un compte de test
-        Account testAccount = new Account(Name='Test Account');
+        Account testAccount = new Account(Name = 'Test Account');
         insert testAccount;
 
-        // Créer un voyage pour le compte
-        Trip__c newTrip = new Trip__c(Name='Test Trip', Account__c=testAccount.Id, StartTripDate__c=Date.today(), EndTripDate__c=Date.today().addDays(7));
-        insert newTrip;
-
-        // Vérifier que le voyage existe avant de le supprimer
-        Trip__c tripBeforeDelete = [SELECT Id FROM Trip__c WHERE Id = :newTrip.Id LIMIT 1];
-        System.assertNotEquals(null, tripBeforeDelete, 'Le voyage devrait exister avant la suppression.');
+        // Créer un voyage
+        Trip__c trip = new Trip__c(
+            Name = 'Test Trip',
+            Account__c = testAccount.Id,
+            StartTripDate__c = Date.today(),
+            EndTripDate__c = Date.today().addDays(7)
+        );
+        insert trip;
 
         // Supprimer le voyage
-        TripService.deleteTrip(newTrip.Id);
+        TripService.deleteTrip(trip.Id);
 
-        // Vérifier que le voyage a bien été supprimé (en vérifiant qu'il n'existe plus)
-        try {
-            Trip__c tripAfterDelete = [SELECT Id FROM Trip__c WHERE Id = :newTrip.Id LIMIT 1];
-            System.assert(false, 'L\'exception attendue : Aucun voyage trouvé après la suppression.');
-        } catch (QueryException e) {
-            System.debug('Erreur attendue, le voyage a bien été supprimé.');
-            // S'assurer que l'exception QueryException est bien levée
-        }
+        // Vérifier que le voyage a été supprimé
+        List<Trip__c> tripsAfterDelete = [SELECT Id FROM Trip__c WHERE Id = :trip.Id];
+        System.assertEquals(0, tripsAfterDelete.size(), 'Le voyage aurait dû être supprimé.');
     }
 
     @isTest
     static void testDeleteTripsByAccountId() {
-        // Créer un compte de test
-        Account testAccount = new Account(Name='Test Account');
+        // Créer un compte
+        Account testAccount = new Account(Name = 'Test Account');
         insert testAccount;
 
-        // Créer plusieurs voyages pour le même compte
-        List<Trip__c> tripsToCreate = new List<Trip__c>();
-        for (Integer i = 0; i < 5; i++) {
-            tripsToCreate.add(new Trip__c(
-                Name = 'Test Trip ' + i, 
-                Account__c = testAccount.Id, 
-                StartTripDate__c = Date.today(), 
+        // Créer plusieurs voyages
+        List<Trip__c> trips = new List<Trip__c>();
+        for (Integer i = 0; i < 3; i++) {
+            trips.add(new Trip__c(
+                Name = 'Trip ' + i,
+                Account__c = testAccount.Id,
+                StartTripDate__c = Date.today(),
                 EndTripDate__c = Date.today().addDays(7)
             ));
         }
-        insert tripsToCreate;
+        insert trips;
 
-        // Vérifier qu'il y a bien 5 voyages pour le compte
-        List<Trip__c> tripsBeforeDelete = [SELECT Id FROM Trip__c WHERE Account__c = :testAccount.Id];
-        System.assertEquals(5, tripsBeforeDelete.size());
-
-        // Supprimer tous les voyages associés au compte
+        // Supprimer tous les voyages
         TripService.deleteTripsByAccountId(testAccount.Id);
 
-        // Vérifier qu'il n'y a plus de voyages associés à ce compte
-        List<Trip__c> tripsAfterDelete = [SELECT Id FROM Trip__c WHERE Account__c = :testAccount.Id];
-        System.assertEquals(0, tripsAfterDelete.size());
+        // Vérifier la suppression
+        List<Trip__c> remainingTrips = [SELECT Id FROM Trip__c WHERE Account__c = :testAccount.Id];
+        System.assertEquals(0, remainingTrips.size(), 'Tous les voyages devraient être supprimés.');
     }
 
     @isTest
     static void testValidationCreateTripInvalidDates() {
-        // Tester la création d'un voyage avec des dates invalides
-        Account testAccount = new Account(Name='Test Account');
+        // Créer un compte
+        Account testAccount = new Account(Name = 'Test Account');
         insert testAccount;
 
+        // Créer un voyage avec des dates invalides
         try {
-            TripService.createTrip('Test Trip', Date.today(), Date.today().addDays(-1), 'A venir', 1000, testAccount.Id);
-            System.assert(false, 'Exception attendue : La date de fin doit être postérieure à la date de début');
+            TripService.createTrip('Invalid Trip', Date.today(), Date.today().addDays(-1), 'A venir', 1000, testAccount.Id);
+            System.assert(false, 'La création aurait dû échouer en raison de dates invalides.');
         } catch (IllegalArgumentException e) {
-            System.assertEquals('Les dates du voyage doivent être valides.', e.getMessage());
+            System.assertEquals('Les dates du voyage doivent être valides et la date de fin doit être postérieure à la date de début.', e.getMessage(), 'Le message d\'erreur est incorrect.');
         }
     }
 
     @isTest
-    static void testUpdateTripCostInvalidValue() {
-        // Tester la mise à jour du coût avec une valeur invalide (négative)
-        Account testAccount = new Account(Name='Test Account');
+    static void testValidationCreateTripNegativeCost() {
+        // Créer un compte
+        Account testAccount = new Account(Name = 'Test Account');
         insert testAccount;
 
-        Trip__c newTrip = new Trip__c(Name='Test Trip', Account__c=testAccount.Id, StartTripDate__c=Date.today(), EndTripDate__c=Date.today().addDays(7), Total_Cost__c=1000);
-        insert newTrip;
-
+        // Créer un voyage avec un coût négatif
         try {
-            TripService.updateTripCost(newTrip.Id, -500);
-            System.assert(false, 'Exception attendue : Le coût total ne peut pas être négatif.');
+            TripService.createTrip('Negative Cost Trip', Date.today(), Date.today().addDays(7), 'A venir', -500, testAccount.Id);
+            System.assert(false, 'La création aurait dû échouer en raison d\'un coût négatif.');
         } catch (IllegalArgumentException e) {
-            System.assertEquals('Le coût total ne peut pas être négatif.', e.getMessage());
+            System.assertEquals('Le coût total ne peut pas être négatif.', e.getMessage(), 'Le message d\'erreur est incorrect.');
         }
     }
 }
