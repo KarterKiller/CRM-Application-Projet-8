@@ -1,4 +1,4 @@
-public class SalesTrackingController {
+public with sharing class SalesTrackingController {
 
     @AuraEnabled(cacheable=true)
     public static List<SalesData> getSalesData() {
