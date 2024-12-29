@@ -1,5 +1,9 @@
 trigger TripValidationTrigger on Trip__c (before insert, before update) {
 
+    if (TriggerHelper.skipValidation) {
+        return; // Ne pas exécuter les validations si elles sont désactivées
+    }
+
     for (Trip__c trip : Trigger.new) {
         // Validation du nom (obligatoire)
         if (String.isBlank(trip.Name)) {

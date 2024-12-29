@@ -1,5 +1,5 @@
 @isTest
-public class ContractTriggerTest {
+public class ContractTriggerHandlerTest {
 
     // Méthode utilitaire pour créer un compte de test
     private static Account createTestAccount() {

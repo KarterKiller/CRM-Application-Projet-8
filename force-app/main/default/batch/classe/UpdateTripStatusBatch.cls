@@ -40,10 +40,17 @@ global class UpdateTripStatusBatch implements Database.Batchable<SObject>, Sched
 
         if (!tripsToUpdate.isEmpty()) {
             try {
+                // Désactiver les validations du trigger temporairement afin de mettre à jour les voyages
+                TriggerHelper.skipValidation = true;
+
                 update tripsToUpdate;  // Mettre à jour les voyages
+
                 System.debug('Voyages mis à jour : ' + tripsToUpdate.size());
             } catch (DmlException e) {
                 System.debug('Erreur lors de la mise à jour des statuts : ' + e.getMessage());
+            } finally {
+                // Réactiver les validations
+                TriggerHelper.skipValidation = false;
             }
         } else {
             System.debug('Aucun voyage à mettre à jour.');

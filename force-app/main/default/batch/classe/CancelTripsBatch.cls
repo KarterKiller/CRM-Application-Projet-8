@@ -5,7 +5,7 @@ global class CancelTripsBatch implements Database.Batchable<SObject>, Schedulabl
         System.debug('CancelTripsBatch - Début de la méthode start');
 
         // Sélectionner les voyages dont la date de début est dans les 7 jours à venir
-        return Database.getQueryLocator([
+        return Database.getQueryLocator([ // getQueryLocator ne charge en mémoire que les enregistrements d'un lot en cours de traitement. Utilisé pour les volumes importants
             SELECT Id, Name, StartTripDate__c, Number_of_Participants__c, Status__c
             FROM Trip__c
             WHERE StartTripDate__c >= :Date.today() 

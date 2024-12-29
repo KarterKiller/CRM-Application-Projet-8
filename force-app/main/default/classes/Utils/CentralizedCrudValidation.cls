@@ -3,7 +3,7 @@ public class CentralizedCrudValidation {
     public static void validateCrud(String objectName, String operation) {
         Schema.DescribeSObjectResult describeResult = Schema.getGlobalDescribe().get(objectName).getDescribe();
 
-        if (operation.toLowerCase() == 'create') {
+        if (operation.toLowerCase() == 'create') { // convertit la valeur en minuiscule avant la comparaison ( mesure de précaution). 
             if (!describeResult.isCreateable()) {
                 throw new SecurityException('Vous n\'avez pas la permission de créer des enregistrements pour ' + objectName);
             }

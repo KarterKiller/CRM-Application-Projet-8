@@ -37,14 +37,14 @@ public with sharing class OpportunityTriggerHandler {
     }
 
     public static void createTripAndContractForClosedWon(List<Opportunity> newOpps, Map<Id, Opportunity> oldOppMap) {
-        List<Trip__c> tripsToInsert = new List<Trip__c>();
+        List<Trip__c> tripsToInsert = new List<Trip__c>(); // Crée une liste de voyages
         List<Contract> contractsToInsert = new List<Contract>();
 
-        for (Opportunity opp : newOpps) {
-            Opportunity oldOpp = oldOppMap != null ? oldOppMap.get(opp.Id) : null;
+        for (Opportunity opp : newOpps) { // Parcours chaque opportunité de la liste des nouvelles opp ( newOpps)
+            Opportunity oldOpp = oldOppMap != null ? oldOppMap.get(opp.Id) : null; // Cherche l'ancienne version de l'oppo ( oldOpp) dans oldOppMap. 
 
             // Vérifier si l'opportunité passe à "Closed Won"
-            if (opp.StageName == 'Closed Won' && (oldOpp == null || oldOpp.StageName != 'Closed Won')) {
+            if (opp.StageName == 'Closed Won' && (oldOpp == null || oldOpp.StageName != 'Closed Won')) { // Si l'oppo est en Closed Won et que l'ancienne version n'était pas en Closed Won
                 // Vérifier que tous les champs nécessaires sont remplis
                 if (opp.StartTripDate__c != null && opp.EndTripDate__c != null &&
                     opp.Destination__c != null && opp.Number_of_Participants__c != null && opp.Amount != null) {
