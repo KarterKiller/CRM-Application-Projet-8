@@ -3,41 +3,38 @@ public class UpdateTripStatusBatchTest {
 
     @isTest
     static void testBatchExecution() {
-        // 1. Création d'un compte de test (obligatoire pour les Trips)
-        Account testAccount = new Account(Name = 'Test Account', Industry = 'Technology');
-        insert testAccount;
+        // 1. Création d'un compte via TestDataFactory
+        Account testAccount = TestDataFactory.createAccount(true);
 
-        // 2. Préparation des données de test
+        // 2. Création des voyages via TestDataFactory
         List<Trip__c> trips = new List<Trip__c>{
-            new Trip__c(
-                Name = 'Voyage A venir',
-                StartTripDate__c = Date.today().addDays(5),
-                EndTripDate__c = Date.today().addDays(10),
-                Status__c = 'A venir',
-                Account__c = testAccount.Id
-            ),
-            new Trip__c(
-                Name = 'Voyage En cours',
-                StartTripDate__c = Date.today().addDays(-2),
-                EndTripDate__c = Date.today().addDays(3),
-                Status__c = 'A venir',
-                Account__c = testAccount.Id
-            ),
-            new Trip__c(
-                Name = 'Voyage Terminé',
-                StartTripDate__c = Date.today().addDays(-10),
-                EndTripDate__c = Date.today().addDays(-5),
-                Status__c = 'A venir',
-                Account__c = testAccount.Id
-            ),
-            new Trip__c(
-                Name = 'Voyage Annulé',
-                StartTripDate__c = Date.today().addDays(5),
-                EndTripDate__c = Date.today().addDays(10),
-                Status__c = 'Annulé',
-                Account__c = testAccount.Id
-            )
+            TestDataFactory.createTrip(testAccount.Id, false),
+            TestDataFactory.createTrip(testAccount.Id, false),
+            TestDataFactory.createTrip(testAccount.Id, false),
+            TestDataFactory.createTrip(testAccount.Id, false)
         };
+
+        // Modification des statuts et dates pour les tests
+        trips[0].Name = 'Voyage A venir';
+        trips[0].StartTripDate__c = Date.today().addDays(5);
+        trips[0].EndTripDate__c = Date.today().addDays(10);
+        trips[0].Status__c = 'A venir';
+ 
+        trips[1].Name = 'Voyage En cours';
+        trips[1].StartTripDate__c = Date.today().addDays(-2);
+        trips[1].EndTripDate__c = Date.today().addDays(3);
+        trips[1].Status__c = 'A venir';
+
+        trips[2].Name = 'Voyage Terminé';
+        trips[2].StartTripDate__c = Date.today().addDays(-10);
+        trips[2].EndTripDate__c = Date.today().addDays(-5);
+        trips[2].Status__c = 'A venir';
+
+        trips[3].Name = 'Voyage Annulé';
+        trips[3].StartTripDate__c = Date.today().addDays(5);
+        trips[3].EndTripDate__c = Date.today().addDays(10);
+        trips[3].Status__c = 'Annulé';
+
         insert trips;
 
         System.debug('Voyages de test créés.');

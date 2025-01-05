@@ -5,7 +5,9 @@ public class OpportunityTriggerHandlerTest {
     private static Account createTestAccount() {
         Account acc = new Account(
             Name = 'Test Account',
-            Industry = 'Technology'
+            Industry = 'Technology',
+            Active__c = 'Yes',
+            Phone = '0123456789'
         );
         insert acc;
         return acc;
@@ -31,7 +33,7 @@ public class OpportunityTriggerHandlerTest {
         insert opp;
         Test.stopTest();
 
-        System.assertNotEquals(null, opp.Id, 'L\'opportunité valide aurait dû être insérée.');
+        System.assertEquals(true, opp.Id != null, 'L\'opportunité valide aurait dû être insérée.');
     }
 
     @isTest
@@ -53,10 +55,9 @@ public class OpportunityTriggerHandlerTest {
         Test.startTest();
         try {
             insert opp;
-            System.assert(false, 'Une exception aurait dû être levée pour une opportunité invalide.');
+            System.assertEquals(false, true, 'Une exception aurait dû être levée pour une opportunité invalide.');
         } catch (DmlException e) {
-            System.assert(e.getMessage().contains('Le montant de l\'opportunité est obligatoire et doit être supérieur à 0.'));
-            
+            System.assertEquals(true, e.getMessage().contains('Le montant de l\'opportunité est obligatoire et doit être supérieur à 0.'), 'Le message d\'erreur est incorrect.');
         }
         Test.stopTest();
     }

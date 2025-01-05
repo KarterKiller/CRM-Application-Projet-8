@@ -1,4 +1,4 @@
-import { LightningElement, wire } from 'lwc';
+import { LightningElement, wire, track } from 'lwc';
 import getTrips from '@salesforce/apex/TripController.getTrips';
 
 export default class TripTable extends LightningElement {
@@ -30,6 +30,7 @@ export default class TripTable extends LightningElement {
         }
     ];
 
+    @track data = [];
     // Récupération des données des voyages via la méthode getTrips
     @wire(getTrips)
     wiredTrips({ data, error }) {

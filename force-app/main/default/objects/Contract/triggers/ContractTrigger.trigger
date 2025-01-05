@@ -1,14 +1,18 @@
 trigger ContractTrigger on Contract (before insert, before update, before delete) {
-
     if (Trigger.isInsert) {
-        ContractTriggerHandler.validateInsert(Trigger.new);
+        for (Contract con : Trigger.new) {
+            ValidationHelper.validateContractInsert(con);
+        }
     }
-
     if (Trigger.isUpdate) {
-        ContractTriggerHandler.validateUpdate(Trigger.new, Trigger.oldMap);
+        for (Contract con : Trigger.new) {
+            Contract oldCon = Trigger.oldMap.get(con.Id);
+            ValidationHelper.validateContractUpdate(con, oldCon);
+        }
     }
-
     if (Trigger.isDelete) {
-        ContractTriggerHandler.validateDelete(Trigger.old);
+        for (Contract con : Trigger.old) {
+            ValidationHelper.validateContractDelete(con);
+        }
     }
 }

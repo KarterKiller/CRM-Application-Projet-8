@@ -4,7 +4,8 @@ public with sharing class TaskController {
         return [
             SELECT Id, Subject, Status, Priority, ActivityDate, Who.Name, What.Name 
             FROM Task 
-            ORDER BY ActivityDate DESC
+            WHERE ActivityDate >= :Date.today().addDays(-5)
+            ORDER BY ActivityDate DESC LIMIT 3
         ];
     }
 }

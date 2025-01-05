@@ -4,32 +4,27 @@ public class SalesTrackingControllerTest {
     @isTest
     static void testGetSalesData() {
         // 1. Préparation des données de test
-        Account acc = new Account(Name = 'Test Account', Industry = 'Technology');
-        insert acc;
+        // Créer un compte via TestDataFactory
+        Account acc = TestDataFactory.createAccount(true);
 
-        Opportunity opp = new Opportunity(
-            Name = 'Test Opportunity',
-            StageName = 'Closed Won',
-            CloseDate = Date.today().addDays(10),
-            Amount = 1000,
-            Number_of_Participants__c = 10,
-            AccountId = acc.Id,
-            StartTripDate__c = Date.today(),
-            EndTripDate__c = Date.today().addDays(5),
-            Destination__c = 'Paris'
-        );
+        // Créer une opportunité via TestDataFactory
+        Opportunity opp = TestDataFactory.createOpportunity(acc.Id, false);
+        opp.StageName = 'Closed Won'; // Modifier le statut pour le test
+        opp.Amount = 1000;
+        opp.Number_of_Participants__c = 10;
+        opp.StartTripDate__c = Date.today();
+        opp.EndTripDate__c = Date.today().addDays(5);
+        opp.Destination__c = 'Paris';
         insert opp;
 
-        Contract contract = new Contract(
-            Name = 'Test Contract',
-            AccountId = acc.Id,
-            Status = 'Draft',
-            StartTripDate__c = Date.today(),
-            EndTripDate__c = Date.today().addDays(7),
-            Amount__c = 500,
-            Number_of_Participants__c = 10,
-            Conditions__c = 'Terms and conditions applied'
-        );
+        // Créer un contrat via TestDataFactory
+        Contract contract = TestDataFactory.createContract(acc.Id, false);
+        contract.Status = 'Draft';
+        contract.StartTripDate__c = Date.today();
+        contract.EndTripDate__c = Date.today().addDays(7);
+        contract.Amount__c = 500;
+        contract.Number_of_Participants__c = 10;
+        contract.Conditions__c = 'Terms and conditions applied';
         insert contract;
 
         // 2. Appeler la méthode à tester

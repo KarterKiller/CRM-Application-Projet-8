@@ -1,4 +1,4 @@
-import { LightningElement, wire } from 'lwc';
+import { LightningElement, wire, track } from 'lwc';
 import getTaskHistory from '@salesforce/apex/TaskController.getTaskHistory';
 
 export default class TaskTable extends LightningElement {
@@ -15,6 +15,7 @@ export default class TaskTable extends LightningElement {
         { label: 'Quoi', fieldName: 'WhatName', type: 'text' }
     ];
 
+    @track data = [];
     // Récupérer les données via Apex
     @wire(getTaskHistory)
     wiredTasks({ data, error }) {

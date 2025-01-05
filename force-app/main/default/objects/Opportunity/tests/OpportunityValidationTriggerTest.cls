@@ -3,98 +3,77 @@ public class OpportunityValidationTriggerTest {
 
     @isTest
     static void testValidationOnInsert() {
-        Account acc = new Account(Name = 'Test Account', Industry = 'Technology');
-        insert acc;
+        // Créer un compte valide via TestDataFactory
+        Account acc = TestDataFactory.createAccount(true);
 
-        // Test avec un montant négatif
-        Opportunity opp = new Opportunity(
-            Name = 'Invalid Opportunity',
-            StageName = 'Prospecting',
-            CloseDate = Date.today().addDays(10),
-            AccountId = acc.Id,
-            Amount = -100,
-            number_of_Participants__c = 10,
-            StartTripDate__c = Date.today(),
-            EndTripDate__c = Date.today().addDays(7),
-            Destination__c = 'Paris'
-        );
+        // Créer une opportunité valide mais sans l'insérer
+        Opportunity opp = TestDataFactory.createOpportunity(acc.Id, false);
 
+        // Modifie l'opportunité pour un cas de test (montant négatif)
+        opp.Amount = -100; // Montant négatif pour provoquer une erreur
+
+        Test.startTest();
         try {
             insert opp;
-            System.assert(false, 'L\'insertion aurait dû échouer en raison d\'un montant négatif.');
+            System.assertEquals(false, true, 'L\'insertion aurait dû échouer en raison d\'un montant négatif.');
         } catch (DmlException e) {
-            System.assert(e.getMessage().contains('Le montant de l\'opportunité est obligatoire et doit être supérieur à 0.'), 'Message d\'erreur inattendu.');
+            System.assertEquals(true, e.getMessage().contains('Le montant de l\'opportunité est obligatoire et doit être supérieur à 0.'), 'Message d\'erreur inattendu.');
         }
+        Test.stopTest();
     }
 
     @isTest
     static void testValidationOnUpdate() {
-        Account acc = new Account(Name = 'Test Account', Industry = 'Technology');
-        insert acc;
+        // Créer un compte et une opportunité valide via TestDataFactory
+        Account acc = TestDataFactory.createAccount(true);
+        Opportunity opp = TestDataFactory.createOpportunity(acc.Id, true);
 
-        // Créer une opportunité valide
-        Opportunity opp = new Opportunity(
-            Name = 'Test Opportunity',
-            StageName = 'Prospecting',
-            CloseDate = Date.today().addDays(10),
-            AccountId = acc.Id,
-            Amount = 1000,
-            number_of_Participants__c = 10,
-            StartTripDate__c = Date.today(),
-            EndTripDate__c = Date.today().addDays(7),
-            Destination__c = 'Paris'
-        );
-        insert opp;
-
-        // Tenter de mettre à jour avec une date de fin antérieure à la date de début
+        // Modifie l'opportunité pour un cas de test (dates invalides)
         opp.StartTripDate__c = Date.today().addDays(5);
-        opp.EndTripDate__c = Date.today().addDays(3);
+        opp.EndTripDate__c = Date.today().addDays(3); // Date de fin antérieure à la date de début
 
+        Test.startTest();
         try {
             update opp;
-            System.assert(false, 'La mise à jour aurait dû échouer en raison des dates de voyage invalides.');
+            System.assertEquals(false, true, 'La mise à jour aurait dû échouer en raison des dates de voyage invalides.');
         } catch (DmlException e) {
-            System.assert(e.getMessage().contains('La date de fin du voyage doit être postérieure à la date de début.'), 'Message d\'erreur inattendu.');
+            System.assertEquals(true, e.getMessage().contains('La date de fin du voyage doit être postérieure à la date de début.'), 'Message d\'erreur inattendu.');
         }
+        Test.stopTest();
     }
 
     @isTest
     static void testValidationForClosedWon() {
-        Account acc = new Account(Name = 'Test Account', Industry = 'Technology');
-        insert acc;
+        // Créer un compte et une opportunité valide via TestDataFactory
+        Account acc = TestDataFactory.createAccount(true);
 
-        // Créer une opportunité valide
-        Opportunity opp = new Opportunity(
-            Name = 'Test Opportunity',
-            StageName = 'Prospecting',
-            CloseDate = Date.today().addDays(10),
-            AccountId = acc.Id,
-            Amount = 1000,
-            StartTripDate__c = Date.today(),
-            EndTripDate__c = Date.today().addDays(7),
-            Number_of_Participants__c = 10,
-            Destination__c = 'Paris'
-        );
-        insert opp;
+        // **Premier cas** : Opportunité valide qui passe à "Closed Won"
+        Opportunity oppValid = TestDataFactory.createOpportunity(acc.Id, true);
+        oppValid.StageName = 'Closed Won';
 
-        // Passer l'opportunité à l'étape "Closed Won"
-        opp.StageName = 'Closed Won';
+        // **Deuxième cas** : Opportunité avec un montant invalide pour "Closed Won"
+        Opportunity oppInvalid = TestDataFactory.createOpportunity(acc.Id, true);
+        oppInvalid.StageName = 'Closed Won';
+        oppInvalid.Amount = 0; // Montant invalide
 
+        Test.startTest();
+
+        // Premier cas
         try {
-            update opp;
-            System.assert(true, 'La mise à jour devrait réussir.');
+            update oppValid;
+            System.assertEquals(true, true, 'La mise à jour devrait réussir pour une opportunité valide.');
         } catch (DmlException e) {
-            System.assert(false, 'Aucune erreur ne devrait être levée pour une opportunité valide.');
+            System.assertEquals(false, true, 'Aucune erreur ne devrait être levée pour une opportunité valide.');
         }
 
-        // Test sans montant pour "Closed Won"
-        opp.Amount = 0;
-
+        // Deuxième cas
         try {
-            update opp;
-            System.assert(false, 'La mise à jour aurait dû échouer en raison d\'un montant invalide pour "Closed Won".');
+            update oppInvalid;
+            System.assertEquals(false, true, 'La mise à jour aurait dû échouer en raison d\'un montant invalide pour "Closed Won".');
         } catch (DmlException e) {
-            System.assert(e.getMessage().contains('Le montant de l\'opportunité est obligatoire et doit être supérieur à 0.'), 'Message d\'erreur inattendu.');
+            System.assertEquals(true, e.getMessage().contains('Le montant de l\'opportunité est obligatoire et doit être supérieur à 0.'), 'Message d\'erreur inattendu.');
         }
+
+        Test.stopTest();
     }
 }

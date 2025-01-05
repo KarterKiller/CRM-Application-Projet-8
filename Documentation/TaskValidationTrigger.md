@@ -1,75 +1,33 @@
-# TaskValidationTrigger
+# Explication du code : TaskValidationTrigger
 
----
+Ce fichier explique le fonctionnement du déclencheur Apex `TaskValidationTrigger`, qui applique des règles de validation sur les tâches (`Task`) dans Salesforce.
 
-## **Objectif**
-
-Le **`TaskValidationTrigger`** applique des règles métier sur l'objet **`Task`** pour garantir l'intégrité des données lors de l'insertion et de la mise à jour.  
-Les validations incluent la vérification de champs obligatoires, des valeurs autorisées et des relations d'enregistrement.
-
----
-
-## **Trigger Logic**
-
-### **Événements Gérés :**
-- **Before Insert**
-- **Before Update**
-
-### **Règles Appliquées :**
-
-1. **Validation du Sujet (`Subject`)**
-   - **Condition :** Le champ `Subject` est obligatoire.
-   - **Message :** *"Le sujet de la tâche est obligatoire."*
-
-2. **Validation de la Date d'Activité (`ActivityDate`)**
-   - **Condition :** La date d'activité doit être **aujourd'hui ou dans le futur**.
-   - **Message :** *"La date de l'activité doit être aujourd'hui ou dans le futur."*
-
-3. **Validation de la Priorité (`Priority`)**
-   - **Condition :** La priorité doit être **`High`**, **`Medium`** ou **`Low`**.
-   - **Message :** *"La priorité doit être 'High', 'Medium' ou 'Low'."*
-
-4. **Validation des Relations (`WhatId` et `WhoId`)**
-   - **Condition :** Au moins un des champs **`WhatId`** (relation avec un objet) ou **`WhoId`** (relation avec une personne) doit être défini.
-   - **Message :** *"La tâche doit être associée à un enregistrement via WhatId ou WhoId."*
-
-5. **Validation des Tâches Marquées "Completed"**
-   - **Condition :** Une tâche avec une date d'activité dans le futur ne peut pas être marquée comme **`Completed`**.
-   - **Message :** *"Une tâche avec une date d'activité dans le futur ne peut pas être marquée comme 'Completed'."*
-
----
-
-## **Code Complet**
-
-```apex
+## Déclaration du déclencheur
+```java
 trigger TaskValidationTrigger on Task (before insert, before update) {
-    for (Task task : Trigger.new) {
-        // Validation du sujet (obligatoire)
-        if (String.isBlank(task.Subject)) {
-            task.addError('Le sujet de la tâche est obligatoire.');
-        }
+```
+Le déclencheur est configuré pour s'exécuter :
+- **Avant l'insertion (`before insert`)** : pour valider les données des nouvelles tâches avant qu'elles ne soient insérées dans la base de données.
+- **Avant la mise à jour (`before update`)** : pour valider les modifications apportées aux tâches existantes avant qu'elles ne soient enregistrées.
 
-        // Validation de la date de l'activité (doit être aujourd'hui ou dans le futur)
-        if (task.ActivityDate != null && task.ActivityDate < Date.today()) {
-            task.addError('La date de l\'activité doit être aujourd\'hui ou dans le futur.');
-        }
+## Appel de la méthode de validation
+```java
+ValidationHelper.validateTask(Trigger.new, Trigger.oldMap);
+```
+### Description
+Le déclencheur délègue la logique de validation à une méthode utilitaire `validateTask` située dans la classe `ValidationHelper`.
 
-        // Validation de la priorité (doit être "High", "Medium", ou "Low")
-        if (!String.isBlank(task.Priority) && 
-            task.Priority != 'High' && task.Priority != 'Medium' && task.Priority != 'Low') {
-            task.addError('La priorité doit être "High", "Medium" ou "Low".');
-        }
+### Paramètres passés à la méthode
+- `Trigger.new` : une liste des nouvelles tâches ou des modifications apportées aux tâches.
+- `Trigger.oldMap` : une carte (Map) contenant les anciennes valeurs des tâches, associées à leur identifiant (uniquement disponible lors de la mise à jour).
 
-        // Validation des relations avec des enregistrements (au moins `WhatId` ou `WhoId` doit être défini)
-        if (task.WhatId == null && task.WhoId == null) {
-            task.addError('La tâche doit être associée à un enregistrement via WhatId ou WhoId.');
-        }
+### Avantages
+- **Modularité** : La logique de validation est centralisée dans la classe `ValidationHelper`, ce qui simplifie la maintenance et le réemploi du code.
+- **Clarté** : Le déclencheur reste simple, se limitant à appeler la méthode appropriée.
 
-        // Validation personnalisée pour les tâches ouvertes
-        if (Trigger.isUpdate && task.Status != null && task.Status == 'Completed') {
-            if (task.ActivityDate != null && task.ActivityDate > Date.today()) {
-                task.addError('Une tâche avec une date d\'activité dans le futur ne peut pas être marquée comme "Completed".');
-            }
-        }
-    }
-}
+## Résumé
+Le déclencheur `TaskValidationTrigger` :
+1. S'exécute avant l'insertion ou la mise à jour de tâches.
+2. Appelle la méthode `validateTask` de la classe `ValidationHelper` pour appliquer les règles de validation définies.
+
+Ce déclencheur suit les bonnes pratiques de Salesforce, en séparant les responsabilités entre le déclencheur et la logique métier.

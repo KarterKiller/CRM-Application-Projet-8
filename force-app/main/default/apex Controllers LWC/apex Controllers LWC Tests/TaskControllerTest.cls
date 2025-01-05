@@ -4,29 +4,24 @@ public class TaskControllerTest {
     @isTest
     static void testGetTaskHistory() {
         // 1. Préparer les données de test
-        Account acc = new Account(Name = 'Test Account', Industry = 'Technology');
-        insert acc;
+        // Créer un compte et un contact via TestDataFactory
+        Account acc = TestDataFactory.createAccount(true);
+        Contact contact = TestDataFactory.createContact(acc.Id, true);
 
-        Contact contact = new Contact(LastName = 'Test Contact', AccountId = acc.Id, Email = 'test@test.com');
-        insert contact;
+        // Créer deux tâches via TestDataFactory
+        Task task1 = TestDataFactory.createTask(acc.Id, contact.Id, false);
+        task1.Subject = 'Test Task 1';
+        task1.Status = 'Not Started';
+        task1.Priority = 'High';
+        task1.ActivityDate = Date.today().addDays(2);
 
-        Task task1 = new Task(
-            Subject = 'Test Task 1',
-            Status = 'Not Started',
-            Priority = 'High',
-            ActivityDate = Date.today().addDays(2),
-            WhatId = acc.Id,
-            WhoId = contact.Id
-        );
+        Task task2 = TestDataFactory.createTask(acc.Id, null, false);
+        task2.Subject = 'Test Task 2';
+        task2.Status = 'Completed';
+        task2.Priority = 'Medium';
+        task2.ActivityDate = Date.today().addDays(1);
 
-        Task task2 = new Task(
-            Subject = 'Test Task 2',
-            Status = 'Completed',
-            Priority = 'Medium',
-            ActivityDate = Date.today().addDays(1),
-            WhatId = acc.Id
-        );
-
+        // Insérer les tâches
         insert new List<Task>{ task1, task2 };
 
         // 2. Appeler la méthode à tester

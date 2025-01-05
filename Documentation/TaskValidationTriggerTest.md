@@ -1,57 +1,96 @@
-# TaskValidationTriggerTest
+# Explication du code : TaskValidationTriggerTest
 
----
+Ce fichier explique la classe de test Apex `TaskValidationTriggerTest`, qui valide les règles de validation mises en œuvre par le déclencheur `TaskValidationTrigger` pour les tâches (`Task`) dans Salesforce.
 
-## **Objectif**
-
-La classe **`TaskValidationTriggerTest`** contient des tests unitaires pour valider les règles métier appliquées par le **`TaskValidationTrigger`**.  
-Ces tests garantissent le bon fonctionnement des validations lors de l'insertion et de la mise à jour des enregistrements de type **Task**.
-
----
-
-## **Tests Couvertures**
-
-### **1. Test de Validation à l'Insertion (`testValidationOnInsert`)**
-
-#### **Scénarios Validés :**
-1. **Sujet vide :**
-   - **Condition :** Le champ `Subject` est vide.
-   - **Message d'erreur attendu :** *"Le sujet de la tâche est obligatoire."*
-
-2. **Date d'activité dans le passé :**
-   - **Condition :** La date d'activité `ActivityDate` est antérieure à aujourd'hui.
-   - **Message d'erreur attendu :** *"La date de l'activité doit être aujourd'hui ou dans le futur."*
-
-#### **Code :**
-```apex
+## Déclaration de la classe
+```java
 @isTest
-static void testValidationOnInsert() {
-    Account acc = new Account(Name = 'Test Account', Industry = 'Technology');
-    insert acc;
+public class TaskValidationTriggerTest {
+```
+Cette classe est déclarée avec l'annotation `@isTest`, indiquant qu'elle contient des méthodes de test.
 
-    // Test avec un sujet vide
-    Task task = new Task(
-        Subject = '',
-        Priority = 'High',
-        ActivityDate = Date.today().addDays(1),
-        WhatId = acc.Id
-    );
+---
 
-    try {
-        insert task;
-        System.assert(false, 'L\'insertion aurait dû échouer en raison d\'un sujet vide.');
-    } catch (DmlException e) {
-        System.assert(e.getMessage().contains('Le sujet de la tâche est obligatoire.'), 'Message d\'erreur inattendu.');
-    }
+## Méthode : `testValidationOnInsertSubjectEmpty`
+### Description
+Teste l'insertion d'une tâche avec un sujet vide.
 
-    // Test avec une date d'activité passée
-    task.Subject = 'Test Task';
-    task.ActivityDate = Date.today().addDays(-1);
+### Étapes
+1. Crée un compte et un contact de test via `TestDataFactory`.
+2. Initialise une tâche avec un sujet vide.
+3. Tente d'insérer la tâche et vérifie qu'une exception est levée.
 
-    try {
-        insert task;
-        System.assert(false, 'L\'insertion aurait dû échouer en raison d\'une date d\'activité passée.');
-    } catch (DmlException e) {
-        System.assert(e.getMessage().contains('La date de l\'activité doit être aujourd\'hui ou dans le futur.'), 'Message d\'erreur inattendu.');
-    }
-}
+### Assertions
+- Vérifie qu'une exception de type `DmlException` est levée.
+- Vérifie que le message d'erreur correspond à la validation (le sujet est obligatoire).
+
+---
+
+## Méthode : `testValidationOnInsertActivityDatePast`
+### Description
+Teste l'insertion d'une tâche avec une date d'activité passée.
+
+### Étapes
+1. Crée un compte et un contact de test via `TestDataFactory`.
+2. Initialise une tâche avec une date d'activité dans le passé.
+3. Tente d'insérer la tâche et vérifie qu'une exception est levée.
+
+### Assertions
+- Vérifie qu'une exception de type `DmlException` est levée.
+- Vérifie que le message d'erreur correspond à la validation (la date d'activité doit être dans le futur ou aujourd'hui).
+
+---
+
+## Méthode : `testValidationOnInsertMissingWhoIdAndWhatId`
+### Description
+Teste l'insertion d'une tâche sans `WhoId` ni `WhatId`.
+
+### Étapes
+1. Initialise une tâche sans `WhoId` ni `WhatId`.
+2. Tente d'insérer la tâche et vérifie qu'une exception est levée.
+
+### Assertions
+- Vérifie qu'une exception de type `DmlException` est levée.
+- Vérifie que le message d'erreur correspond à la validation (une tâche doit être associée à un enregistrement).
+
+---
+
+## Méthode : `testValidationOnUpdateInvalidPriority`
+### Description
+Teste la mise à jour d'une tâche avec une priorité invalide.
+
+### Étapes
+1. Crée et insère une tâche valide via `TestDataFactory`.
+2. Modifie la priorité de la tâche avec une valeur invalide.
+3. Tente de mettre à jour la tâche et vérifie qu'une exception est levée.
+
+### Assertions
+- Vérifie qu'une exception de type `DmlException` est levée.
+- Vérifie que le message d'erreur correspond à la validation (priorité invalide).
+
+---
+
+## Méthode : `testValidationOnUpdateCompletedStatusWithFutureDate`
+### Description
+Teste la mise à jour d'une tâche avec le statut "Completed" et une date d'activité dans le futur.
+
+### Étapes
+1. Crée et insère une tâche valide via `TestDataFactory`.
+2. Modifie le statut à "Completed" et définit une date future.
+3. Tente de mettre à jour la tâche et vérifie qu'une exception est levée.
+
+### Assertions
+- Vérifie qu'une exception de type `DmlException` est levée.
+- Vérifie que le message d'erreur correspond à la validation (date future incompatible avec "Completed").
+
+---
+
+## Résumé
+Cette classe de test valide les règles suivantes :
+1. Le sujet d'une tâche ne peut pas être vide.
+2. La date d'activité d'une tâche ne peut pas être dans le passé.
+3. Une tâche doit être associée à un enregistrement via `WhoId` ou `WhatId`.
+4. La priorité d'une tâche doit être "High", "Medium" ou "Low".
+5. Une tâche avec une date future ne peut pas avoir le statut "Completed".
+
+Grâce à ces tests, on garantit que les règles de validation appliquées par le déclencheur `TaskValidationTrigger` fonctionnent comme prévu.

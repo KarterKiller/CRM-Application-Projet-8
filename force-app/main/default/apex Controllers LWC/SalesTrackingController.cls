@@ -4,21 +4,17 @@ public with sharing class SalesTrackingController {
     public static List<SalesData> getSalesData() {
         List<SalesData> results = new List<SalesData>();
 
-        // Requête SOQL pour récupérer les données nécessaires
-        List<Account> accounts = [SELECT Id, Name, CreatedDate FROM Account LIMIT 10]; // Limité à 10 pour l'exemple
-        List<Opportunity> opportunities = [SELECT Id, AccountId, Amount, StageName FROM Opportunity WHERE StageName IN ('Closed Won', 'Negotiation')];
-        List<Contract> contracts = [SELECT Id, AccountId, EndDate, Conditions__c, Status FROM Contract WHERE EndDate > :Date.today()];
-
-        // Mapper les opportunités et contrats par AccountId
-        Map<Id, Opportunity> opportunitiesMap = new Map<Id, Opportunity>();
-        for (Opportunity opp : opportunities) {
-            opportunitiesMap.put(opp.AccountId, opp);
-        }
-
-        Map<Id, Contract> contractsMap = new Map<Id, Contract>();
-        for (Contract contract : contracts) {
-            contractsMap.put(contract.AccountId, contract);
-        }
+        // Requête unique pour récupérer les comptes avec leurs opportunités et contrats liés
+        List<Account> accounts = [
+            SELECT 
+                Id, 
+                Name, 
+                CreatedDate,
+                (SELECT Id, Amount, StageName FROM Opportunities WHERE StageName IN ('Closed Won', 'Negotiation')),
+                (SELECT Id, EndDate, Conditions__c, Status FROM Contracts WHERE EndDate > :Date.today())
+            FROM Account
+            LIMIT 10
+        ];
 
         // Mapper les données des comptes, opportunités et contrats dans un objet SalesData
         for (Account acc : accounts) {
@@ -27,15 +23,16 @@ public with sharing class SalesTrackingController {
             salesRecord.accountName = acc.Name;
             salesRecord.accountCreatedDate = acc.CreatedDate.date(); // Convertir Datetime en Date
 
-            // Recherche de l'opportunité et du contrat associé à ce compte
-            Opportunity opp = opportunitiesMap.get(acc.Id);
-            if (opp != null) {
+            // Récupérer la première opportunité associée (si disponible)
+            if (!acc.Opportunities.isEmpty()) {
+                Opportunity opp = acc.Opportunities[0];
                 salesRecord.opportunityAmount = opp.Amount;
                 salesRecord.opportunityStatus = opp.StageName;
             }
 
-            Contract contract = contractsMap.get(acc.Id);
-            if (contract != null) {
+            // Récupérer le premier contrat associé (si disponible)
+            if (!acc.Contracts.isEmpty()) {
+                Contract contract = acc.Contracts[0];
                 salesRecord.endDate = contract.EndDate;
                 salesRecord.conditions = contract.Conditions__c;
                 salesRecord.contractStatus = contract.Status;

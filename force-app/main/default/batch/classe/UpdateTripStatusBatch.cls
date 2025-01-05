@@ -1,8 +1,7 @@
-global class UpdateTripStatusBatch implements Database.Batchable<SObject>, Schedulable {
+public class UpdateTripStatusBatch implements Database.Batchable<SObject> {
 
     // Méthode start : Sélectionne tous les voyages actifs
-    global Database.QueryLocator start(Database.BatchableContext BC) {
-        System.debug('UpdateTripStatusBatch - Début de la méthode start');
+    public Database.QueryLocator start(Database.BatchableContext batchContext) {
         return Database.getQueryLocator([
             SELECT Id, Name, StartTripDate__c, EndTripDate__c, Status__c
             FROM Trip__c
@@ -11,60 +10,43 @@ global class UpdateTripStatusBatch implements Database.Batchable<SObject>, Sched
     }
 
     // Méthode execute : Traite les enregistrements par lots
-    global void execute(Database.BatchableContext BC, List<Trip__c> trips) {
-        System.debug('UpdateTripStatusBatch - Début de la méthode execute');
-        System.debug('Nombre de voyages dans le lot : ' + trips.size());
-
+    public void execute(Database.BatchableContext batchContext, List<Trip__c> trips) {
         List<Trip__c> tripsToUpdate = new List<Trip__c>();
 
         Date today = Date.today();
 
         for (Trip__c trip : trips) {
-            System.debug('Traitement du voyage : ' + trip.Name);
-
             if (trip.StartTripDate__c != null && trip.EndTripDate__c != null) {
-
-                // Logique de mise à jour du statut
                 if (today < trip.StartTripDate__c) {
                     trip.Status__c = 'A venir';  // Si la date de début est dans le futur
                 } else if (today >= trip.StartTripDate__c && today <= trip.EndTripDate__c) {
-                    trip.Status__c = 'En cours';  // Si la date actuelle est entre la date de début et la date de fin
+                    trip.Status__c = 'En cours';  // Si la date actuelle est entre la date de début et de fin
                 } else if (today > trip.EndTripDate__c) {
                     trip.Status__c = 'Terminé';  // Si la date actuelle est après la date de fin
                 }
-
                 tripsToUpdate.add(trip);
-                System.debug('Mise à jour du statut du voyage : ' + trip.Name + ' -> ' + trip.Status__c);
             }
         }
 
         if (!tripsToUpdate.isEmpty()) {
             try {
-                // Désactiver les validations du trigger temporairement afin de mettre à jour les voyages
-                TriggerHelper.skipValidation = true;
-
-                update tripsToUpdate;  // Mettre à jour les voyages
-
-                System.debug('Voyages mis à jour : ' + tripsToUpdate.size());
+                TriggerHelper.skipValidation = true;  // Désactiver les triggers pour éviter les validations inutiles
+                update tripsToUpdate;
             } catch (DmlException e) {
-                System.debug('Erreur lors de la mise à jour des statuts : ' + e.getMessage());
+                // Log de l'erreur (si nécessaire)
             } finally {
-                // Réactiver les validations
-                TriggerHelper.skipValidation = false;
+                TriggerHelper.skipValidation = false;  // Réactiver les triggers
             }
-        } else {
-            System.debug('Aucun voyage à mettre à jour.');
         }
     }
 
     // Méthode finish : Exécutée à la fin du traitement
-    global void finish(Database.BatchableContext BC) {
-        System.debug('UpdateTripStatusBatch - Batch terminé.');
+    public void finish(Database.BatchableContext batchContext) {
+        // Logic à exécuter à la fin du batch
     }
 
     // Méthode pour planifier le batch
-    global void execute(SchedulableContext SC) {
-        System.debug('UpdateTripStatusBatch - Planification du batch');
+    public void execute(SchedulableContext schedulableContext) {
         Database.executeBatch(new UpdateTripStatusBatch());
     }
 }

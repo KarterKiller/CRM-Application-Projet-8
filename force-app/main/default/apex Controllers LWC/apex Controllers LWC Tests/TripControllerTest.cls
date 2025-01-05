@@ -4,29 +4,27 @@ public class TripControllerTest {
     @isTest
     static void testGetTrips() {
         // 1. Préparer les données de test
-        Account testAccount = new Account(Name = 'Test Account', Industry = 'Technology');
-        insert testAccount;
+        // Créer un compte via TestDataFactory
+        Account testAccount = TestDataFactory.createAccount(true);
 
-        Trip__c trip1 = new Trip__c(
-            Name = 'Test Trip 1',
-            StartTripDate__c = Date.today(),
-            EndTripDate__c = Date.today().addDays(5),
-            Number_of_Participants__c = 15,
-            Destination__c = 'Paris',
-            Status__c = 'A venir',
-            Account__c = testAccount.Id
-        );
+        // Créer deux voyages via TestDataFactory
+        Trip__c trip1 = TestDataFactory.createTrip(testAccount.Id, false);
+        trip1.Name = 'Test Trip 1';
+        trip1.StartTripDate__c = Date.today();
+        trip1.EndTripDate__c = Date.today().addDays(5);
+        trip1.Number_of_Participants__c = 15;
+        trip1.Destination__c = 'Paris';
+        trip1.Status__c = 'A venir';
 
-        Trip__c trip2 = new Trip__c(
-            Name = 'Test Trip 2',
-            StartTripDate__c = Date.today().addDays(10),
-            EndTripDate__c = Date.today().addDays(15),
-            Number_of_Participants__c = 20,
-            Destination__c = 'Rome',
-            Status__c = 'A venir',
-            Account__c = testAccount.Id
-        );
+        Trip__c trip2 = TestDataFactory.createTrip(testAccount.Id, false);
+        trip2.Name = 'Test Trip 2';
+        trip2.StartTripDate__c = Date.today().addDays(10);
+        trip2.EndTripDate__c = Date.today().addDays(15);
+        trip2.Number_of_Participants__c = 20;
+        trip2.Destination__c = 'Rome';
+        trip2.Status__c = 'A venir';
 
+        // Insérer les voyages
         insert new List<Trip__c>{ trip1, trip2 };
 
         // 2. Appeler la méthode à tester

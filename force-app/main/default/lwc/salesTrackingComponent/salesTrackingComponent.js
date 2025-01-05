@@ -1,4 +1,4 @@
-import { LightningElement, wire } from 'lwc';
+import { LightningElement, wire, track } from 'lwc';
 import getSalesData from '@salesforce/apex/SalesTrackingController.getSalesData';
 
 export default class SalesTrackingComponent extends LightningElement {
@@ -13,7 +13,7 @@ export default class SalesTrackingComponent extends LightningElement {
         { label: 'Statut du Contrat', fieldName: 'contractStatus' }
     ];
 
-    data = []; // Pour stocker les données à afficher dans le tableau
+    @track data = []; // Pour stocker les données à afficher dans le tableau
 
     // Récupération des données via Apex
     @wire(getSalesData)

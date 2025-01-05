@@ -1,77 +1,124 @@
-# OpportunityTriggerHandler
+# Explication du code : OpportunityTriggerHandler
 
----
+Ce fichier explique le fonctionnement de la classe Apex `OpportunityTriggerHandler`, utilisée pour gérer des opportunités dans Salesforce. La méthode principale, `createTripAndContractForClosedWon`, permet de créer un voyage (Trip) et un contrat (Contract) lorsqu'une opportunité passe à l'étape **Closed Won**.
 
-## **Objectif**
+## Déclaration de la classe
+```java
+public with sharing class OpportunityTriggerHandler {
+```
+Cette classe est déclarée avec le mot-clé `with sharing`, ce qui signifie qu'elle respecte les règles de partage définies dans Salesforce.
 
-La classe **`OpportunityTriggerHandler`** est une classe Apex de gestion des règles métiers pour l'objet **`Opportunity`**.  
-Elle applique des validations sur les champs d'une opportunité et effectue des opérations supplémentaires comme la création d'un **voyage** (**Trip__c**) et d'un **contrat** (**Contract**) lorsque l'opportunité atteint le statut **"Closed Won"**.
+## Méthode principale : `createTripAndContractForClosedWon`
+### Description
+La méthode `createTripAndContractForClosedWon` gère la création de deux objets Salesforce personnalisés :
+- `Trip__c` : représente un voyage.
+- `Contract` : représente un contrat.
 
----
+### Paramètres
+- `newOpps` : une liste des opportunités mises à jour.
+- `oldOppMap` : une carte (Map) contenant les anciennes valeurs des opportunités, associées à leur identifiant.
 
-## **1. Méthodes Principales**
+### Étapes de traitement
 
-### **1.1 Méthode `validateOpportunity`**
+#### Initialisation des listes pour les insertions
+```java
+List<Trip__c> tripsToInsert = new List<Trip__c>();
+List<Contract> contractsToInsert = new List<Contract>();
+```
+Des listes sont créées pour collecter les objets à insérer ultérieurement dans Salesforce.
 
-#### **Objectif :**  
-Valider les champs obligatoires et les règles métiers pour chaque opportunité.
+#### Parcours des nouvelles opportunités
+```java
+for (Opportunity opp : newOpps) {
+```
+Chaque opportunité de la liste `newOpps` est analysée.
 
-#### **Validations effectuées :**  
-1. **Montant de l'opportunité :**  
-   - `Amount` ne doit pas être null ou ≤ 0.  
-   - **Message :** *"Le montant de l'opportunité est obligatoire et doit être supérieur à 0."*
+#### Récupération de l'ancienne opportunité
+```java
+Opportunity oldOpp = oldOppMap != null ? oldOppMap.get(opp.Id) : null;
+```
+On récupère l'ancienne version de l'opportunité depuis `oldOppMap`. Si aucune ancienne opportunité n'existe, la valeur par défaut est `null`.
 
-2. **Dates de début et de fin du voyage :**  
-   - `StartTripDate__c` et `EndTripDate__c` doivent être renseignées.  
-   - La date de fin doit être postérieure à la date de début.  
-   - **Message :**  
-     - *"Les dates de début et de fin du voyage sont obligatoires."*  
-     - *"La date de fin du voyage doit être postérieure à la date de début."*
+#### Vérification des conditions pour la création
+1. **L'opportunité passe à "Closed Won"**
+   ```java
+   if (opp.StageName == 'Closed Won' && (oldOpp == null || oldOpp.StageName != 'Closed Won')) {
+   ```
+   La méthode vérifie que l'opportunité est passée à l'étape "Closed Won" et qu'elle n'y était pas auparavant.
 
-3. **Relation avec un compte :**  
-   - `AccountId` doit être renseigné.  
-   - **Message :** *"L'opportunité doit être associée à un compte."*
+2. **Tous les champs nécessaires sont remplis**
+   ```java
+   if (opp.StartTripDate__c != null && opp.EndTripDate__c != null &&
+       opp.Destination__c != null && opp.Number_of_Participants__c != null && opp.Amount != null) {
+   ```
+   Tous les champs obligatoires (dates, destination, participants, montant) doivent être renseignés.
 
-4. **Nom de l'opportunité :**  
-   - `Name` est obligatoire.  
-   - **Message :** *"Le nom de l'opportunité est obligatoire."*
+#### Création d'un voyage (`Trip__c`)
+```java
+Trip__c trip = new Trip__c(
+    Name = 'Trip - ' + opp.Destination__c + ' - ' + opp.StartTripDate__c.format(),
+    Status__c = 'A venir',
+    Destination__c = opp.Destination__c,
+    StartTripDate__c = opp.StartTripDate__c,
+    EndTripDate__c = opp.EndTripDate__c,
+    Number_of_Participants__c = opp.Number_of_Participants__c,
+    Total_Cost__c = opp.Amount,
+    Account__c = opp.AccountId,
+    Opportunity__c = opp.Id
+);
+tripsToInsert.add(trip);
+```
+Un objet `Trip__c` est créé et ajouté à la liste `tripsToInsert`.
 
-5. **Destination :**  
-   - `Destination__c` est obligatoire.  
-   - **Message :** *"La destination est obligatoire."*
+#### Création d'un contrat (`Contract`)
+```java
+Contract contract = new Contract(
+    Name = 'Contract for ' + opp.Name,
+    AccountId = opp.AccountId,
+    Opportunity__c = opp.Id,
+    StartTripDate__c = opp.StartTripDate__c,
+    EndTripDate__c = opp.EndTripDate__c,
+    Amount__c = opp.Amount,
+    Destination__c = opp.Destination__c,
+    Number_of_Participants__c = opp.Number_of_Participants__c,
+    Status = 'Draft'
+);
+contractsToInsert.add(contract);
+```
+Un objet `Contract` est créé et ajouté à la liste `contractsToInsert`.
 
-6. **Nombre de participants :**  
-   - `Number_of_Participants__c` ne doit pas être null ou ≤ 0.  
-   - **Message :** *"Le nombre de participants est obligatoire et doit être supérieur à 0."*
+#### Gestion des erreurs
+Si des champs obligatoires ne sont pas renseignés, une erreur est ajoutée à l'opportunité :
+```java
+opp.addError('Impossible de créer le voyage et le contrat. Tous les champs obligatoires ne sont pas remplis.');
+```
 
-#### **Code :**
-```apex
-public static void validateOpportunity(List<Opportunity> newOpps, Map<Id, Opportunity> oldOppMap) {
-    for (Opportunity opp : newOpps) {
-        if (opp.Amount == null || opp.Amount <= 0) {
-            opp.addError('Le montant de l\'opportunité est obligatoire et doit être supérieur à 0.');
-        }
+#### Insertion des objets dans Salesforce
+1. **Insertion des voyages**
+   ```java
+   if (!tripsToInsert.isEmpty()) {
+       try {
+           insert tripsToInsert;
+       } catch (DmlException e) {
+           System.debug('Erreur lors de l\'insertion des voyages : ' + e.getMessage());
+           throw e;
+       }
+   }
+   ```
+   Les objets `Trip__c` sont insérés. Toute erreur lors de l'insertion est capturée et affichée dans les logs.
 
-        if (opp.StartTripDate__c == null || opp.EndTripDate__c == null) {
-            opp.addError('Les dates de début et de fin du voyage sont obligatoires.');
-        } else if (opp.EndTripDate__c <= opp.StartTripDate__c) {
-            opp.addError('La date de fin du voyage doit être postérieure à la date de début.');
-        }
+2. **Insertion des contrats**
+   ```java
+   if (!contractsToInsert.isEmpty()) {
+       try {
+           insert contractsToInsert;
+       } catch (DmlException e) {
+           System.debug('Erreur lors de l\'insertion des contrats : ' + e.getMessage());
+           throw e;
+       }
+   }
+   ```
+   Les objets `Contract` sont insérés avec une gestion similaire des erreurs.
 
-        if (opp.AccountId == null) {
-            opp.addError('L\'opportunité doit être associée à un compte.');
-        }
-
-        if (String.isBlank(opp.Name)) {
-            opp.addError('Le nom de l\'opportunité est obligatoire.');
-        }
-
-        if (String.isBlank(opp.Destination__c)) {
-            opp.addError('La destination est obligatoire.');
-        }
-
-        if (opp.Number_of_Participants__c == null || opp.Number_of_Participants__c <= 0) {
-            opp.addError('Le nombre de participants est obligatoire et doit être supérieur à 0.');
-        }
-    }
-}
+## Résumé
+Cette classe vérifie les opportunités mises à jour, et si elles remplissent les conditions nécessaires, elle crée et insère des voyages et des contrats associés. Elle s'assure que les données sont complètes avant l'insertion et gère les erreurs potentielles de manière robuste.

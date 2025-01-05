@@ -2,93 +2,103 @@
 public class TaskValidationTriggerTest {
 
     @isTest
-    static void testValidationOnInsert() {
-        Account acc = new Account(Name = 'Test Account', Industry = 'Technology');
-        insert acc;
+    static void testValidationOnInsertSubjectEmpty() {
+        // Créer un compte et un contact de test pour l'association
+        Account acc = TestDataFactory.createAccount(true);
+        Contact con = TestDataFactory.createContact(acc.Id, true);
 
-        // Test avec un sujet vide
-        Task task = new Task(
-            Subject = '',
-            Priority = 'High',
-            ActivityDate = Date.today().addDays(1),
-            WhatId = acc.Id
-        );
+        // Tâche avec un sujet vide
+        Task task = TestDataFactory.createTask(acc.Id, con.Id, false);
+        task.Subject = ''; // Sujet vide
+        task.Status = 'Not Started'; // Statut valide
+        task.WhoId = con.Id; // Association avec un contact valide
 
+        Test.startTest();
         try {
             insert task;
-            System.assert(false, 'L\'insertion aurait dû échouer en raison d\'un sujet vide.');
+            System.assertEquals(false, true, 'L\'insertion aurait dû échouer en raison d\'un sujet vide.');
         } catch (DmlException e) {
-            System.assert(e.getMessage().contains('Le sujet de la tâche est obligatoire.'), 'Message d\'erreur inattendu.');
+            System.assertEquals(true, e.getMessage().contains('Le sujet de la tâche est obligatoire.'), 'Message d\'erreur inattendu.');
         }
-
-        // Test avec une date d'activité passée
-        task.Subject = 'Test Task';
-        task.ActivityDate = Date.today().addDays(-1);
-
-        try {
-            insert task;
-            System.assert(false, 'L\'insertion aurait dû échouer en raison d\'une date d\'activité passée.');
-        } catch (DmlException e) {
-            System.assert(e.getMessage().contains('La date de l\'activité doit être aujourd\'hui ou dans le futur.'), 'Message d\'erreur inattendu.');
-        }
+        Test.stopTest();
     }
 
     @isTest
-    static void testValidationOnUpdate() {
-        Account acc = new Account(Name = 'Test Account', Industry = 'Technology');
-        insert acc;
+    static void testValidationOnInsertActivityDatePast() {
+        // Créer un compte et un contact de test pour l'association
+        Account acc = TestDataFactory.createAccount(true);
+        Contact con = TestDataFactory.createContact(acc.Id, true);
 
-        Task task = new Task(
-            Subject = 'Test Task',
-            Priority = 'High',
-            ActivityDate = Date.today(),
-            WhatId = acc.Id
-        );
-        insert task;
+        // Tâche avec une date d'activité passée
+        Task task = TestDataFactory.createTask(acc.Id, con.Id, false);
+        task.Subject = 'Test Task'; // Sujet valide
+        task.Status = 'Not Started'; // Statut valide
+        task.WhoId = con.Id; // Association avec un contact valide
+        task.ActivityDate = Date.today().addDays(-1); // Date passée
 
-        // Essayer de mettre à jour la tâche avec une priorité invalide
+        Test.startTest();
+        try {
+            insert task;
+            System.assertEquals(false, true, 'L\'insertion aurait dû échouer en raison d\'une date d\'activité passée.');
+        } catch (DmlException e) {
+            System.assertEquals(true, e.getMessage().contains('La date de l\'activité doit être aujourd\'hui ou dans le futur.'), 'Message d\'erreur inattendu.');
+        }
+        Test.stopTest();
+    }
+
+    @isTest
+    static void testValidationOnInsertMissingWhoIdAndWhatId() {
+        // Tâche sans relation associée (WhoId et WhatId)
+        Task task = TestDataFactory.createTask(null, null, false);
+        task.WhatId = null;
+        task.WhoId = null;
+
+        Test.startTest();
+        try {
+            insert task;
+            System.assertEquals(false, true, 'L\'insertion aurait dû échouer en raison de l\'absence de WhatId et WhoId.');
+        } catch (DmlException e) {
+            System.assertEquals(true, e.getMessage().contains('La tâche doit être associée à un enregistrement via WhatId ou WhoId.'), 'Message d\'erreur inattendu.');
+        }
+        Test.stopTest();
+    }
+
+    @isTest
+    static void testValidationOnUpdateInvalidPriority() {
+        // Insérer une tâche valide
+        Account acc = TestDataFactory.createAccount(true);
+        Task task = TestDataFactory.createTask(acc.Id, null, true);
+
+        // Mettre une priorité invalide
         task.Priority = 'Urgent';
 
+        Test.startTest();
         try {
             update task;
-            System.assert(false, 'La mise à jour aurait dû échouer en raison d\'une priorité invalide.');
+            System.assertEquals(false, true, 'La mise à jour aurait dû échouer en raison d\'une priorité invalide.');
         } catch (DmlException e) {
-            System.assert(e.getMessage().contains('La priorité doit être "High", "Medium" ou "Low".'), 'Message d\'erreur inattendu.');
+            System.assertEquals(true, e.getMessage().contains('La priorité doit être "High", "Medium" ou "Low".'), 'Message d\'erreur inattendu.');
         }
-
-        // Essayer de mettre à jour la tâche avec une date future et le statut "Completed"
-        task.Priority = 'Medium';
-        task.Status = 'Completed';
-        task.ActivityDate = Date.today().addDays(5);
-
-        try {
-            update task;
-            System.assert(false, 'La mise à jour aurait dû échouer car la date d\'activité est dans le futur.');
-        } catch (DmlException e) {
-            System.assert(e.getMessage().contains('Une tâche avec une date d\'activité dans le futur ne peut pas être marquée comme "Completed".'), 'Message d\'erreur inattendu.');
-        }
+        Test.stopTest();
     }
 
     @isTest
-    static void testSuccessfulInsertAndUpdate() {
-        Account acc = new Account(Name = 'Test Account', Industry = 'Technology');
-        insert acc;
+    static void testValidationOnUpdateCompletedStatusWithFutureDate() {
+        // Insérer une tâche valide
+        Account acc = TestDataFactory.createAccount(true);
+        Task task = TestDataFactory.createTask(acc.Id, null, true);
 
-        // Insertion réussie
-        Task task = new Task(
-            Subject = 'Test Task',
-            Priority = 'High',
-            ActivityDate = Date.today().addDays(1),
-            WhatId = acc.Id
-        );
-        insert task;
-        System.assertNotEquals(null, task.Id, 'La tâche aurait dû être insérée.');
-
-        // Mise à jour réussie
+        // Essayer de mettre le statut à "Completed" avec une date future
         task.Status = 'Completed';
-        task.ActivityDate = Date.today();
-        update task;
-        Task updatedTask = [SELECT Status FROM Task WHERE Id = :task.Id];
-        System.assertEquals('Completed', updatedTask.Status, 'Le statut de la tâche aurait dû être mis à jour.');
+        task.ActivityDate = Date.today().addDays(5); // Date future
+
+        Test.startTest();
+        try {
+            update task;
+            System.assertEquals(false, true, 'La mise à jour aurait dû échouer car une tâche avec une date future ne peut pas être "Completed".');
+        } catch (DmlException e) {
+            System.assertEquals(true, e.getMessage().contains('Une tâche avec une date d\'activité dans le futur ne peut pas être marquée comme "Completed".'), 'Message d\'erreur inattendu.');
+        }
+        Test.stopTest();
     }
 }

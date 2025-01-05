@@ -1,6 +1,6 @@
 trigger OpportunityValidationTrigger on Opportunity (before insert, before update, after update) {
     if (Trigger.isBefore) {
-        OpportunityTriggerHandler.validateOpportunity(Trigger.new, Trigger.oldMap);
+        ValidationHelper.validateOpportunity(Trigger.new, Trigger.oldMap);
     }
 
     if (Trigger.isAfter && Trigger.isUpdate) {

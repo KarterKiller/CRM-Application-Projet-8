@@ -1,30 +1,23 @@
 @isTest
 public class CancelTripsBatchTest {
 
-    // Méthode utilitaire pour créer un compte de test
-    private static Account createTestAccount() {
-        Account acc = new Account(
-            Name = 'Test Account',
-            Industry = 'Technology'
-        );
-        insert acc;
-        return acc;
-    }
-
     @isTest
     static void testBatchExecution() {
-        // Créer un compte de test requis pour les voyages
-        Account testAccount = createTestAccount();
+        // Créer un compte via TestDataFactory
+        Account testAccount = TestDataFactory.createAccount(true);
 
-        // Créer des voyages de test associés au compte
+        // Créer des voyages via TestDataFactory
         List<Trip__c> trips = new List<Trip__c>{
-            new Trip__c(Name = 'Voyage 1', StartTripDate__c = Date.today().addDays(7), EndTripDate__c = Date.today().addDays(9), 
-                        Number_of_Participants__c = 5, Status__c = 'A venir', Account__c = testAccount.Id),
-            new Trip__c(Name = 'Voyage 2', StartTripDate__c = Date.today().addDays(7), EndTripDate__c = Date.today().addDays(9), 
-                        Number_of_Participants__c = 15, Status__c = 'A venir', Account__c = testAccount.Id),
-            new Trip__c(Name = 'Voyage 3', StartTripDate__c = Date.today().addDays(7), EndTripDate__c = Date.today().addDays(9), 
-                        Number_of_Participants__c = null, Status__c = 'A venir', Account__c = testAccount.Id)
+            TestDataFactory.createTrip(testAccount.Id, false), // Voyage avec participants < 10
+            TestDataFactory.createTrip(testAccount.Id, false), // Voyage avec participants >= 10
+            TestDataFactory.createTrip(testAccount.Id, false)  // Voyage avec participants null
         };
+
+        // Modifier les données des voyages pour couvrir tous les cas
+        trips[0].Number_of_Participants__c = 5; // Annulation attendue
+        trips[1].Number_of_Participants__c = 15; // Pas d'annulation
+        trips[2].Number_of_Participants__c = null; // Pas d'annulation
+
         insert trips;
 
         // Exécuter le Batch

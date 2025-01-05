@@ -1,54 +1,64 @@
-1. Objectif
-La classe AccountValidationTriggerTest est conçue pour tester les règles de validation définies dans le trigger AccountValidationTrigger.
-Elle s'assure que les erreurs appropriées sont levées lors de la création ou de la mise à jour d'un compte.
+# Explication du code : AccountValidationTriggerTest
 
-2. Scénarios de test
-2.1 Validation du nom obligatoire
-Règle testée : Le champ Name est obligatoire.
-Scénario :
-Tenter d'insérer un compte sans nom.
-Vérifier qu'une erreur est levée avec le bon message.
+Ce fichier explique la classe de test Apex `AccountValidationTriggerTest`, qui valide les règles de validation mises en œuvre par le déclencheur `AccountValidationTrigger`.
 
+## Déclaration de la classe
+```java
+@isTest
+public class AccountValidationTriggerTest {
+```
+Cette classe est marquée avec l'annotation `@isTest`, indiquant qu'elle est exclusivement utilisée pour les tests.
 
-2.2 Validation du numéro de téléphone
-Règle testée : Le champ Phone doit contenir exactement 10 chiffres.
-Scénario :
-Tenter d'insérer un compte avec un numéro de téléphone incorrect.
-Vérifier qu'une erreur est levée avec le bon message.
+---
 
+## Méthodes principales
 
-2.3 Validation du statut "Active__c"
-Règle testée : Le champ Active__c doit avoir la valeur "Yes".
-Scénario :
-Tenter d'insérer un compte avec Active__c = "No".
-Vérifier qu'une erreur est levée avec le bon message.
+### `testAccountNameValidation`
+#### Description
+Teste la validation du champ **Nom** d'un compte (`Account`).
 
-3. Couverture de code
-Nom du test	                    Cas de test	                                      Résultat attendu
-testAccountNameValidation	      Création d'un compte sans nom	                    Erreur : "Le nom du compte est obligatoire."
-testPhoneValidation	            Création d'un compte avec un numéro invalide	        Erreur : "Le numéro de téléphone doit contenir exactement 10 chiffres."
-testStatusValidation	          Création d'un compte avec Active__c = "No"	          Erreur : "Le champ Active__c doit avoir la valeur Yes."
+#### Étapes
+1. Crée un compte sans nom en utilisant `TestDataFactory`.
+2. Tente d'insérer le compte et vérifie qu'une exception est levée.
 
+#### Assertions
+- Vérifie que l'exception est de type `DmlException`.
+- Vérifie que le message d'erreur correspond à la validation (le nom est obligatoire).
 
-4. Bonnes pratiques respectées
-Isolation des tests : Chaque méthode teste une règle métier spécifique.
-Assertions détaillées : Les messages d'erreur sont validés précisément.
-Tests négatifs : Les cas d'erreur sont systématiquement couverts.
-Données minimales : Utilisation d'objets avec uniquement les champs requis pour chaque scénario.
+---
 
+### `testPhoneValidation`
+#### Description
+Teste la validation du champ **Numéro de téléphone** d'un compte (`Account`).
 
-5. Exécution des tests
-Pour exécuter cette classe de test :
+#### Étapes
+1. Crée un compte avec un numéro de téléphone invalide.
+2. Tente d'insérer le compte et vérifie qu'une exception est levée.
 
-Developer Console :
+#### Assertions
+- Vérifie que l'exception est de type `DmlException`.
+- Vérifie que le message d'erreur correspond à la validation (numéro de téléphone obligatoire et au format valide).
 
-Ouvrir la Developer Console dans Salesforce.
-Aller dans Test > New Run.
-Sélectionner AccountValidationTriggerTest et exécuter.
+---
 
+### `testStatusValidation`
+#### Description
+Teste la validation du champ personnalisé **Active__c** d'un compte (`Account`).
 
-6. Résumé
-Trigger testé : AccountValidationTrigger
-Classe de test : AccountValidationTriggerTest
-Nombre de méthodes : 3
-Objectif principal : Valider que les règles métiers sont respectées avant la création ou mise à jour des comptes.
+#### Étapes
+1. Crée un compte avec un statut inactif (`Active__c = 'No'`).
+2. Tente d'insérer le compte et vérifie qu'une exception est levée.
+
+#### Assertions
+- Vérifie que l'exception est de type `DmlException`.
+- Vérifie que le message d'erreur correspond à la validation (statut "Yes" obligatoire).
+
+---
+
+## Résumé
+Cette classe de test valide les règles suivantes :
+1. **Nom obligatoire** : Le champ `Name` d'un compte ne peut pas être vide.
+2. **Numéro de téléphone valide** : Le champ `Phone` doit contenir exactement 10 chiffres.
+3. **Statut actif obligatoire** : Le champ personnalisé `Active__c` doit avoir la valeur "Yes".
+
+Ces tests garantissent que les validations implémentées dans `AccountValidationTrigger` fonctionnent comme prévu, en empêchant l'insertion de comptes non conformes aux règles métier.

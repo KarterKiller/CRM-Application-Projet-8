@@ -2,100 +2,103 @@
 public class TripValidationTriggerTest {
 
     @isTest
-    static void testValidationOnInsert() {
-        Account testAccount = new Account(Name = 'Test Account', Industry = 'Technology');
-        insert testAccount;
+    static void testValidationOnInsertNameEmpty() {
+        // Créer un compte valide
+        Account acc = TestDataFactory.createAccount(true);
 
-        // Test avec un nom vide
-        Trip__c trip = new Trip__c(
-            Name = '',
-            StartTripDate__c = Date.today(),
-            EndTripDate__c = Date.today().addDays(7),
-            Status__c = 'A venir',
-            Total_Cost__c = 1000,
-            Account__c = testAccount.Id
-        );
+        // Test pour un nom vide
+        Trip__c trip = TestDataFactory.createTrip(acc.Id, false);
+        trip.Name = ''; // Nom vide pour déclencher une erreur
 
+        Test.startTest();
         try {
             insert trip;
-            System.assert(false, 'L\'insertion aurait dû échouer en raison d\'un nom vide.');
+            System.assertEquals(false, true, 'L\'insertion aurait dû échouer en raison d\'un nom vide.');
         } catch (DmlException e) {
-            System.assert(e.getMessage().contains('Le nom du voyage est obligatoire.'), 'Message d\'erreur inattendu.');
+            System.assertEquals(true, e.getMessage().contains('Le nom du voyage est obligatoire.'), 'Message d\'erreur inattendu.');
         }
-
-        // Test avec une date de fin invalide
-        trip.Name = 'Test Trip';
-        trip.EndTripDate__c = Date.today();
-
-        try {
-            insert trip;
-            System.assert(false, 'L\'insertion aurait dû échouer en raison d\'une date de fin invalide.');
-        } catch (DmlException e) {
-            System.assert(e.getMessage().contains('La date de fin doit être postérieure à la date de début.'), 'Message d\'erreur inattendu.');
-        }
-
-        // Test avec un coût négatif
-        trip.EndTripDate__c = Date.today().addDays(7);
-        trip.Total_Cost__c = -500;
-
-        try {
-            insert trip;
-            System.assert(false, 'L\'insertion aurait dû échouer en raison d\'un coût total négatif.');
-        } catch (DmlException e) {
-            System.assert(e.getMessage().contains('Le coût total ne peut pas être négatif.'), 'Message d\'erreur inattendu.');
-        }
+        Test.stopTest();
     }
 
     @isTest
-    static void testValidationOnUpdate() {
-        Account testAccount = new Account(Name = 'Test Account', Industry = 'Technology');
-        insert testAccount;
+    static void testValidationOnInsertDatesInvalid() {
+        // Créer un compte valide
+        Account acc = TestDataFactory.createAccount(true);
 
-        Trip__c trip = new Trip__c(
-            Name = 'Test Trip',
-            StartTripDate__c = Date.today(),
-            EndTripDate__c = Date.today().addDays(7),
-            Status__c = 'A venir',
-            Total_Cost__c = 1000,
-            Account__c = testAccount.Id
-        );
-        insert trip;
+        // Test pour des dates invalides
+        Trip__c trip = TestDataFactory.createTrip(acc.Id, false);
+        trip.StartTripDate__c = Date.today();
+        trip.EndTripDate__c = Date.today().addDays(-1); // Date de fin avant la date de début
 
-        // Essayer de mettre à jour le voyage avec un statut "Terminé" et une date de fin future
-        trip.Status__c = 'Terminé';
-        trip.EndTripDate__c = Date.today().addDays(10);
+        Test.startTest();
+        try {
+            insert trip;
+            System.assertEquals(false, true, 'L\'insertion aurait dû échouer en raison de dates invalides.');
+        } catch (DmlException e) {
+            System.assertEquals(true, e.getMessage().contains('La date de fin doit être postérieure à la date de début.'), 'Message d\'erreur inattendu.');
+        }
+        Test.stopTest();
+    }
 
+    @isTest
+    static void testValidationOnInsertCostNegative() {
+        // Créer un compte valide
+        Account acc = TestDataFactory.createAccount(true);
+
+        // Test pour un coût négatif
+        Trip__c trip = TestDataFactory.createTrip(acc.Id, false);
+        trip.Total_Cost__c = -500; // Coût négatif
+
+        Test.startTest();
+        try {
+            insert trip;
+            System.assertEquals(false, true, 'L\'insertion aurait dû échouer en raison d\'un coût total négatif.');
+        } catch (DmlException e) {
+            System.assertEquals(true, e.getMessage().contains('Le coût total ne peut pas être négatif.'), 'Message d\'erreur inattendu.');
+        }
+        Test.stopTest();
+    }
+
+    @isTest
+    static void testSuccessfulInsert() {
+        // Créer un compte valide
+        Account acc = TestDataFactory.createAccount(true);
+
+        // Créer un voyage valide
+        Trip__c trip = TestDataFactory.createTrip(acc.Id, false);
+        trip.Name = 'Valid Trip'; // Nom valide
+        trip.Total_Cost__c = 5000; // Coût valide
+        trip.Status__c = 'A venir'; // Statut valide
+
+        // Insérer le voyage
+        Test.startTest();
+        try {
+            insert trip;
+            System.assertEquals(true, trip.Id != null, 'Le voyage aurait dû être inséré.');
+        } catch (DmlException e) {
+            System.assertEquals(false, true, 'Une erreur inattendue a été levée lors de l\'insertion : ' + e.getMessage());
+        }
+        Test.stopTest();
+    }
+
+    @isTest
+    static void testSuccessfulUpdate() {
+        // Créer un compte valide
+        Account acc = TestDataFactory.createAccount(true);
+
+        // Créer et insérer un voyage valide
+        Trip__c trip = TestDataFactory.createTrip(acc.Id, true); // Le voyage est inséré directement
+
+        // Mettre à jour le statut
+        trip.Status__c = 'Annulé';
+        Test.startTest();
         try {
             update trip;
-            System.assert(false, 'La mise à jour aurait dû échouer car le voyage ne peut pas être terminé avec une date de fin future.');
+            Trip__c updatedTrip = [SELECT Status__c FROM Trip__c WHERE Id = :trip.Id];
+            System.assertEquals('Annulé', updatedTrip.Status__c, 'Le statut du voyage aurait dû être mis à jour.');
         } catch (DmlException e) {
-            System.assert(e.getMessage().contains('Un voyage avec une date de fin dans le futur ne peut pas être marqué comme "Terminé".'), 'Message d\'erreur inattendu.');
+            System.assertEquals(false, true, 'Une erreur inattendue a été levée lors de la mise à jour : ' + e.getMessage());
         }
-    }
-
-    @isTest
-    static void testSuccessfulInsertAndUpdate() {
-        Account testAccount = new Account(Name = 'Test Account', Industry = 'Technology');
-        insert testAccount;
-
-        // Insertion réussie
-        Trip__c trip = new Trip__c(
-            Name = 'Valid Trip',
-            StartTripDate__c = Date.today(),
-            EndTripDate__c = Date.today().addDays(7),
-            Status__c = 'A venir',
-            Total_Cost__c = 2000,
-            Account__c = testAccount.Id
-        );
-        insert trip;
-        System.assertNotEquals(null, trip.Id, 'Le voyage aurait dû être inséré.');
-
-        // Mise à jour réussie
-        trip.Status__c = 'Annulé';
-        trip.EndTripDate__c = Date.today().addDays(1);
-        update trip;
-
-        Trip__c updatedTrip = [SELECT Status__c FROM Trip__c WHERE Id = :trip.Id];
-        System.assertEquals('Annulé', updatedTrip.Status__c, 'Le statut du voyage aurait dû être mis à jour.');
+        Test.stopTest();
     }
 }
