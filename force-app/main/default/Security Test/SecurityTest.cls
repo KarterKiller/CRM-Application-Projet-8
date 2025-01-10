@@ -35,8 +35,11 @@ public class SecurityTest {
                 // Si aucune exception n'est levée, le test échoue
                 System.assert(false, 'L\'utilisateur standard a pu modifier un enregistrement non autorisé.');
             } catch (DmlException e) {
-                // Vérifier que l'exception est correctement levée
-                System.assert(true, 'L\'action non autorisée a été correctement bloquée.');
+                // Vérifier que l'exception contient le message attendu (facultatif)
+                System.assert(
+                    e.getMessage().contains('INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY'),
+                    'Le message d\'exception ne correspond pas au comportement attendu.'
+                );
             }
         }
     }
